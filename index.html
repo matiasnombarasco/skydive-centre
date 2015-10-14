@@ -83,7 +83,7 @@
                 <h3 class="modal-title">Agregar pasajero</h3>
             </div>
             <div class="modal-body">
-                <form>
+                <form ng-submit="submit()" ng-controller="PilotListCtrl">
                     <div class="form-group">
                         <label>Fecha</label>
                         <input ng-model="fecha" type="text" class="form-control" name="fecha">
