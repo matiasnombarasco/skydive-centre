@@ -8,6 +8,7 @@ tandemAppControllers.controller('PilotListCtrl', ['$scope', 'Pilot',
         //esta va en castellano, en el callback de la funncion donde definis el controller, le pasamos una funcion
         //anonima, que tiene la llamada query del servicio Pilot, angular se maneja todo en base a nombres.
 
+        $scope.submit() = $scope.agregar();
         $scope.agregar = function() {
             var nuevaReserva = new Pilot({});
             nuevaReserva.nombre = $scope.nombre;
@@ -35,7 +36,7 @@ tandemAppControllers.controller('PilotListCtrl', ['$scope', 'Pilot',
             $scope.pilots.splice(index, 1);    
 
                         this.pilot.$remove();
- 
+            
              // $scope.pilots = Pilot.query();
             return false;
         };
