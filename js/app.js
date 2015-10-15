@@ -4,17 +4,20 @@ var tandemApp = angular.module('tandemApp', [
     'ngRoute',
     'pilotService',
     'tandemAppControllers',
-    'uibootstrapdemo'
+    'uibootstrapdemo',
+    'ui.bootstrap',
+    'ngAnimate'
 ]);
 
-tandemApp.config(function ($routeProvider, $locationProvider) {
+tandemApp.config(['$routeProvider',
+    function ($routeProvider, $locationProvider) {
         $routeProvider
             .when('/', {
-                templateUrl: 'index.html',
+                templateUrl: 'booking.html',
                 controller: 'PilotListCtrl'
             })
             .when('/api/id', {
                 templateUrl: 'index.html',
                 controller: 'PilotListCtrl'
                 })
-    });
+    }]);
