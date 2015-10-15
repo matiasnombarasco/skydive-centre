@@ -8,7 +8,6 @@ tandemAppControllers.controller('PilotListCtrl', ['$scope', 'Pilot',
         //esta va en castellano, en el callback de la funncion donde definis el controller, le pasamos una funcion
         //anonima, que tiene la llamada query del servicio Pilot, angular se maneja todo en base a nombres.
 
-        $scope.submit() = $scope.agregar();
         $scope.agregar = function() {
             var nuevaReserva = new Pilot({});
             nuevaReserva.nombre = $scope.nombre;
@@ -63,6 +62,7 @@ uibootstrapdemo.controller('ModalDemoCtrl', function ($scope, $uibModal) {
 uibootstrapdemo.controller('ModalInstanceCtrl', function ($scope, $modalInstance) {
 
     $scope.ok = function () {
+        tandemAppControllers.agregar($scope);
         $modalInstance.close();
     };
 
