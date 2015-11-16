@@ -1,11 +1,15 @@
 'use strict';
 
-var pilotService = angular.module('pilotService', ['ngResource']);
+var bookingService = angular.module('bookingService', ['ngResource']);
 
-pilotService.factory('Pilot', ['$resource',
+bookingService.factory('BookResource', ['$resource',
+    function($resource) {
+        return $resource('endpoints/bookings/id', { id: '@id' });
+    }]);
+
+bookingService.factory('BooksGroupsResource', ['$resource',
     function($resource) {
         //here he hit to the endpoint, in this case we will get the whole list, without filtering, so no need
         //to pass paramters or some extra info in the request
-        return $resource('endpoints/api/id', { id: '@id' });
-
+        return $resource('endpoints/booksgroup/groupid', { groupid: '@groupid' });
     }]);

@@ -1,35 +1,59 @@
-<div ng-controller="ModalDemoCtrl">
-    <script type="text/ng-template" id="myModalContent.html">
-        <div class="modal-header">
-            <h3 class="modal-title">Agregar pasajero</h3>
+<div class="modal-header">
+    <h3 class="modal-title">Agregar participante</h3>
+</div>
+
+<div class="alert alert-success alert-dismissible" role="alert" ng-show="first">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <strong>Email y telefono requeridos:</strong> para el primer pasajero.
+</div>
+
+<div class="modal-body">
+    <form name="bookingForm" ng-submit="saveBook()">
+        <div class="form-group">
+            <label>Nombre *</label>
+            <input ng-model="book.firstname" type="text" class="form-control" placeholder="Nombre" autofocus required>
         </div>
-        <div class="modal-body">
-            <form>
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <input ng-model="fecha" type="text" class="form-control" name="fecha">
-                </div>
-                <div class="form-group">
-                    <label>Nombre</label>
-                    <input ng-model="nombre" type="text" class="form-control" name="nombre">
-                </div>
-                <div class="form-group">
-                    <label>Telefono</label>
-                    <input ng-model="telefono" type="text" class="form-control" name="telefono">
-                </div>
-                <div class="form-group">
-                    <label>e-mail</label>
-                    <input ng-model="email" type="text" class="form-control" name="email">
-                </div>
-            </form>
+
+        <div class="form-group">
+            <label>Apellido *</label>
+            <input ng-model="book.lastname" type="text" class="form-control" placeholder="Apellido" required>
+        </div>
+
+        <div class="form-group">
+            <label>e-mail</label>
+            <input ng-model="book.email" type="email" class="form-control" placeholder="email" ng-required="first">
+        </div>
+
+        <div class="form-group">
+            <label>Telefono</label>
+            <input ng-model="book.phone" type="text" class="form-control" placeholder="Telefono" ng-required="first">
+        </div>
+        <div class="form-group">
+            <label>Fecha de Nacimiento</label>
+            <div class="form-inline">
+                <select ng-model="book.dobday" ng-options="day for day in days()" class="form-control">
+                    <option value="" disabled>--</option>
+                </select>
+
+                <select ng-model="book.dobmonth" ng-options="month for month in months()" class="form-control">
+                    <option value="" disabled>--</option>
+                </select>
+
+                <select ng-model="book.dobyear" ng-options="year for year in years()" class="form-control">
+                    <option value="" disabled>----</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Peso (kg)</label>
+            <input ng-model="book.weight" type="text" class="form-control" placeholder="Peso">
         </div>
         <div class="modal-footer">
-            <button class="btn btn-warning" type="button" ng-click="cancel()">Cancelar</button>
-            <button class="btn btn-primary" type="button" ng-click="ok()">Agregar</button>
+            <button class="btn btn-primary" type="button" ng-disabled="bookingForm.$invalid" ng-click="saveBook()">Guardar</button>
+            <button class="btn btn-warning" type="button" ng-click="cancel();">Cancelar</button>
         </div>
-    </script>
-
-
-    <!--<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#skydiveinfo">Agregar Paracaidista</button>-->
+    </form>
 </div>
+
 

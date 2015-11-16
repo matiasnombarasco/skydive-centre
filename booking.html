@@ -1,46 +1,129 @@
-<div ng-controller="PilotListCtrl" class="container">
+<!--
+<div class="center"><h2><span class="label label-default">Reservas Paracaidismo</span></h2></div>
+-->
 
-    <form>
-        <div class="form-group">
-            <div id="date"></div>
+<img alt="Paracaidismo Rosario" src="images/pr.png"
+    style="
+    padding-top: 20px;
+    display: block;
+    width: auto;
+    height: auto;
+    max-height: 80px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+    border: 0;
+    -ms-interpolation-mode: bicubic;
+">
+
+
+<hr/>
+<div class="container disable-text-selection">
+
+    <style>
+        .btn[disabled] {
+            opacity: 0.60;
+            filter: alpha(opacity=90);
+            background-color: #690000;
+            color: #777;
+        }
+    </style>
+
+    <div class="alert alert-success alert-dismissible" role="alert" ng-show="invalidGroupID">
+        <button type="button" ng-model="invalidGroupIDButton" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <strong>ID de grupo invalido</strong> Por favor ingrese un ID valido.
+    </div>
+
+    <div class="row">
+        <div style="float: left;">
+            <div class="input-group" style="width: 135px;">
+                <input type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false" readonly/>
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                  </span>
+            </div>
         </div>
-    </form>
 
-    <button type="button" class="btn btn-primary" ng-click="open()">Agregar pasajero</button>
+        <div style="float: left; padding-left: 5px;">
+            <button type="button" class="btn btn-danger fa fa-plus" ng-click="open(Books.length)" ng-show="dt">Agregar Particimante</button>
+        </div>
+
+        <div style="float:right;" class="col-xs-5 col-sm-3 col-md-3 col-lg-2">
+            <input ng-show = "groupidview" ng-disable = "groupiddisabled" style="width: 80px; float: right; text-align: center; text-transform:uppercase;"
+                   ng-model="groupid"
+                   class="form-control"
+                   ng-change="refreshGroup()"
+                   maxlength="5"
+                   uib-tooltip="Conserve este codigo de reserva para continuar luego."
+                   tooltip-placement="top"
+                   tooltip-trigger="mouseenter"
+                   tooltip-enable="true"
+            >
+            <button style="float: right;" type="button" class="btn btn-warning fa fa-plus" ng-click="showgroupid()" ng-hide="groupidview">&nbsp;Unirte a un gurpo</button>
+
+        </div>
+    </div>
+
+
+    <!--
+    <div class="center">
+        <div style="display:inline-block; min-height:290px;">
+            <uib-datepicker ng-model="dt" min-date="minDate" show-weeks="true" class="well well-sm" custom-class="getDayClass(date, mode)" date-disabled="disabled(date, mode)"></uib-datepicker>
+        </div>
+    </div>
+    -->
+
+
 
     <div id="info"></div>
     <br/>
     <div id="viewdata"></div>
 
-    <table class="table table-bordered table-hover">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Telefono</th>
-            <th>email</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr ng-repeat="pilot in pilots">
-            <td>
-                {{pilot.id}}
-            </td>
-            <td>
-                {{pilot.nombre}}
-            </td>
-            <td>
-                {{pilot.telefono}}
-            </td>
-            <td>
-                {{pilot.email}}
-            </td>
-            <td>
-                <!--<a class="btn btn-warning btn-sm" data-toggle="modal" ng-click="borrar()"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></a>-->
-                <a class="btn btn-danger btn-sm"  ng-click="borrar()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <div class="panel panel-primary">
+            <div class="panel-heading">Reservas agregadas
+<!--
+                <div class="sw-search" >
+                    <div class="nav-search" id="nav-search">
+                        Filter: <span class="input-icon">
+                        <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filterBook" ng-change="resetLimit();"  autocomplete="off" type="text" style="width:300px;" focus>
+                        <i class="search-icon fa fa-search nav-search-icon"></i>
+                    </span>
+                    </div>
+                </div>
+-->
+            </div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                <!--<tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-ban fa-3x"></i>&nbsp;No data found</td></tr>-->
+                <tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-cog fa-3x fa-spin"></i>&nbsp;Loading</td></tr>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Accion</th>
+                    </tr>
+
+                    <style>
+                        .selected {
+                            background-color: lightgreen !important;
+                        }
+                    </style>
+
+                    <tr ng-repeat="book in Books" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                        <td>{{book.firstname}}</td><td>{{book.lastname}}</td>
+                        <td style="width:100px">
+                            <div class="btn-group">
+                                <!--<button type="button" class="btn btn-default fa fa-edit" ng-click="open(book);"></button>-->
+                                <button type="button" class="btn btn-danger fa fa-trash-o" ng-click="bookdelete();"></button>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div style="float: right; padding-right: 35px;">
+        <button ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()">Continuar</button>
+    </div>
 </div>
