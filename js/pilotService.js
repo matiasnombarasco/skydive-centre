@@ -9,7 +9,5 @@ bookingService.factory('BookResource', ['$resource',
 
 bookingService.factory('BooksGroupsResource', ['$resource',
     function($resource) {
-        //here he hit to the endpoint, in this case we will get the whole list, without filtering, so no need
-        //to pass paramters or some extra info in the request
-        return $resource('endpoints/booksgroup/groupid', { groupid: '@groupid' });
+        return $resource('endpoints/booksgroups/groupid', { groupid: '@groupid' });
     }]);

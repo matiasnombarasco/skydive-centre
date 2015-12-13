@@ -1,0 +1,191 @@
+<uib-tabset>
+
+<uib-tab heading="Recepcion">
+
+    <img alt="Paracaidismo Rosario" src="images/pr.png" style="
+            padding-top: 20px;
+            display: block;
+            width: auto;
+            height: auto;
+            max-height: 80px;
+            max-width: 100%;
+            float: right;
+            border: 0;
+            -ms-interpolation-mode: bicubic;
+            ">
+
+    <style>
+        .page-title {
+            background-color: #a7ddea !important;
+            font-size: 29px;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+
+    </style>
+
+    <hr/>
+    <div class="container disable-text-selection" ng-controller="BookingCtrl">
+        <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
+            <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
+                Recepcion
+            </div>
+        </div>
+        <br/>
+
+        <div style="display: inline-block;">
+            <div style="float: left; padding-right: 10px;"><h4>Listo para saltar? Elegi la fecha que quieras <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
+            <div class="input-group" style="width: 135px;">
+                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-click="updateBookList()" ng-model="dt" is-open="status.opened"  datepicker-options="dateOptions" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+          </span>
+            </div>
+        </div>
+
+
+        <div class="table-responsive">
+            <div class="panel panel-primary">
+                <div class="panel-heading">Reservas {{Books.length}}
+                    <div class="sw-search" >
+                        <div class="nav-search" id="nav-search">
+                            Filtro: <span class="input-icon">
+                            <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtro" autocomplete="off" type="text" style="width:300px;" focus>
+                            <i class="search-icon fa fa-search nav-search-icon"></i>
+                        </span>
+                        </div>
+                    </div>
+
+
+                </div>
+                <div class="panel-body">
+
+                    <table class="table table-striped" style="font-size: small;">
+                        <tr>
+                            <th>Horario</th>
+                            <th>GroupID</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Telefono</th>
+                            <th>email</th>
+                            <th>Fecha Nac</th>
+                            <th>Peso</th>
+                            <th>Deposito</th>
+                            <th>Saldo</th>
+                            <th>Accion</th>
+                        </tr>
+
+                        <style>
+                            .selected {
+                                background-color: lightgreen !important;
+                            }
+                        </style>
+
+                        <tr ng-repeat="book in Books | filter:filtro" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                            <td>{{book.schtime}}</td>
+                            <td>{{book.groupid}}</td>
+                            <td>{{book.firstname}}</td>
+                            <td>{{book.lastname}}</td>
+                            <td>{{book.phone}}</td>
+                            <td>{{book.email}}</td>
+                            <td>{{book.dob}}</td>
+                            <td>{{book.weight}}</td>
+                            <td>{{book.deposit | currency}}</td>
+                            <td>{{book.pending | currency}}</td>
+                            <td style="width:100px">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-primary" ng-click="sendToManifest(book);">Manifestar</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                 </div>
+             </div>
+         </div>
+    </div>
+
+
+</uib-tab>
+
+
+<!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
+
+<uib-tab heading="Manifiesto">
+
+    <img alt="Paracaidismo Rosario" src="images/pr.png"
+         style="
+            padding-top: 20px;
+            display: block;
+            width: auto;
+            height: auto;
+            max-height: 80px;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 100%;
+            border: 0;
+            -ms-interpolation-mode: bicubic;
+            ">
+
+    <style>
+        .page-title {
+            background-color: #a7ddea !important;
+            font-size: 29px;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                width: 100% !important;
+            }
+        }
+
+
+    </style>
+
+    <hr/>
+    <div class="container disable-text-selection">
+        <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
+            <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
+                Manifiesto
+            </div>
+        </div>
+        <br/>
+        <table class="table table-striped" style="font-size: small;">
+            <tr>
+                <th>Vuelos</th>
+                <th>Informacion Vuelo</th>
+                <th>Pasajeros</th>
+            </tr>
+            <tr>
+                <td>
+
+                </td>
+                <td>
+
+                </td>
+                <td>
+                    Pasajeros manifestados
+                </td>
+            </tr>
+            <style>
+                .selected {
+                    background-color: lightgreen !important;
+                }
+            </style>
+
+
+        </table>
+    </div>
+
+
+</uib-tab>
+
+<!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
+
+
+
+</uib-tabset>

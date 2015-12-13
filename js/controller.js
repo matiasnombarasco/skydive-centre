@@ -5,13 +5,14 @@
 
 /* Controllers */
 
-tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource',
-    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource) {
+tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http',
+    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http) {
 
         $scope.groupid = makeid();
         $scope.groupidview=false;
         $scope.groupiddisabled = false;
         $scope.invalidGroupID = false;
+
 
         $scope.selectFila = function(row)
         {
@@ -40,7 +41,7 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                 controller: 'bookingEditCtrl',
                 resolve: {
                     item: function () {
-                        return bookcopy;
+                        return book;
                     }
                 }
             }).result.then(function (item) {
@@ -75,12 +76,18 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
 
         $scope.refreshGroup = function () {
             if ($scope.groupid.length == 5) {
-                BookResource.query({makeid: $scope.groupid}).$promise.then(function (resultBooks) {
+                $scope.groupid = $scope.groupid.toUpperCase();
+                BookResource.query({groupid: $scope.groupid}).$promise.then(function (resultBooks) {
                     $scope.Books = resultBooks;
                     if (resultBooks.length == 0) {
                         $scope.groupid = makeid();
                         $scope.invalidGroupID = true;
-                        $BooksGroupsResource.query({makeid: }).$promise.then(function(resultBooksGroups) {
+                    }
+                    else {
+                        BooksGroupsResource.query({groupid: $scope.groupid}).$promise.then(function(resultBooksGroups) {
+                            if (resultBooksGroups.length > 0) {
+                                $scope.dt = resultBooksGroups[0].bookdate;
+                            }
                         });
                     }
                 });
@@ -102,23 +109,10 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                 }
             }).result.then(function (item) {
                     // Save DB
-                    angular.forEach($scope.Books, function(book)
-                    {
-                        var newBooking = new BookResource({});
-                        if (typeof book === "object" && book.id > 0) {
-                            newBooking.id = book.id;
-                        }
-                        newBooking.bookdate = $filter('date')($scope.dt, "yyyy/MM/dd");
-                        newBooking.firstname = book.firstname;
-                        newBooking.lastname = book.lastname;
-                        newBooking.email = book.email;
-                        newBooking.groupid = $scope.groupid.toUpperCase();
-                        newBooking.phone = book.phone;
-                        newBooking.dob = book.dobyear + "/" + book.dobmonth + "/" + book.dobday;
-                        newBooking.weight = book.weight;
-                        newBooking.$save();
-                    });
-                    //window.location.replace('http://127.0.0.1/BookingAngular/#/booksucess')
+                    $scope.Books[0].groupid = $scope.groupid;
+                    $scope.Books[0].bookdate = $filter('date')($scope.dt, "yyyy/MM/dd");
+                    $http.post('http://127.0.0.1/BookingAngular/endpoints/newBooking.php', $scope.Books);
+
                 });
 
 
@@ -128,12 +122,12 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
         /////////////////////////////////////////
         // Date Picker
         $scope.disabled = function (date, mode) {
-            return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6  ) );
+            //return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6  ) );
         };
 
         $scope.toggleMin = function () {
             $scope.minDate = $scope.minDate ? null : new Date();
-            $scope.minDate.setDate($scope.minDate.getDate() + 1);
+            $scope.minDate.setDate($scope.minDate.getDate() +1 );
         };
 
         $scope.toggleMin();
@@ -154,11 +148,49 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
         };
 
         $scope.status = {
-            opened: false
+            opened: true
         };
         // Date Picker End
         ////////////////////////////////////////
 
+
+        $scope.selectFila = function(row)
+        {
+            $scope.selectedrow = row;
+        };
+
+        $scope.payments = [{ id: 1, name: 'Efectivo' }, { id: 2, name: 'Tarjeta de Credito' }];
+
+        $scope.sendToManifest = function (book) {
+            var bookcopy = angular.copy(book);
+            var modalInstance = $uibModal.open({
+                templateUrl: 'sendToManifest.html',
+                controller: 'bookingEditCtrl',
+                //windowClass: 'app-modal-sentToManifest',
+                resolve: {
+                    item: function () {
+                        return book;
+                    }
+                }
+            }).result.then(function (item) {
+                    if ( typeof(book) === "object" ) // update
+                    {
+                        var index = $scope.Books.indexOf(book);
+                        $scope.Books.splice(index,1,item);
+                    }
+                    else // add new
+                    {
+                        $scope.Books.push(item);
+                    }
+                });
+        };
+
+
+
+        $scope.updateBookList =  function ()
+        {
+            $scope.Books = BookResource.query({date:($filter('date')($scope.dt, "yyyy/MM/dd"))});
+        }
     }
 ]);
 
@@ -230,3 +262,10 @@ tandemApp.controller('termsCtrl', function ($scope, $modalInstance, item) {
         $modalInstance.close(item);
     };
 });
+
+
+tandemApp.controller('QuickReceptionCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource',
+    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource) {
+
+
+    }]);

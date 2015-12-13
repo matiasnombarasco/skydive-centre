@@ -1,9 +1,4 @@
-<!--
-<div class="center"><h2><span class="label label-default">Reservas Paracaidismo</span></h2></div>
--->
-
-<img alt="Paracaidismo Rosario" src="images/pr.png"
-    style="
+<img alt="Paracaidismo Rosario" src="images/pr.png" style="
     padding-top: 20px;
     display: block;
     width: auto;
@@ -18,7 +13,7 @@
 
 
 <hr/>
-<div class="container disable-text-selection">
+<div class="container disable-text-selection" ng-controller="BookingCtrl">
 
     <style>
         .btn[disabled] {
@@ -26,6 +21,10 @@
             filter: alpha(opacity=90);
             background-color: #690000;
             color: #777;
+        }
+        .datepicker {
+            background-color: #fff ;
+            color: #333 ;
         }
     </style>
 
@@ -35,17 +34,20 @@
     </div>
 
     <div class="row">
+        <!--<h4>Listo para saltar? Te damos la bienvenida a <strong>Paracaidismo Rosario</strong>. Estamos muy emocionados que nos hallas seleccionado para realizar tu primer salto bautismo.</h4>-->
+
         <div style="float: left;">
+            <div style="float: left; padding-right: 10px;"><h4>Listo para saltar? Elegi la fecha que quieras <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
             <div class="input-group" style="width: 135px;">
-                <input type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false" readonly/>
-                  <span class="input-group-btn">
-                    <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-                  </span>
+                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+          </span>
             </div>
         </div>
 
-        <div style="float: left; padding-left: 5px;">
-            <button type="button" class="btn btn-danger fa fa-plus" ng-click="open(Books.length)" ng-show="dt">Agregar Particimante</button>
+        <div style="clear: both; padding-left: 5px;">
+            <button type="button" style="float: left;" class="btn btn-danger fa fa-plus" ng-click="open(Books.length)" ng-show="dt">Agregar Particimante</button><h4 ng-show="dt" style="padding-top: 5px;"> <span  style="padding-left: 10px;" class="glyphicon glyphicon-arrow-left"></span> Agrega los pariticipantes a la lista</h4>
         </div>
 
         <div style="float:right;" class="col-xs-5 col-sm-3 col-md-3 col-lg-2">
@@ -58,8 +60,9 @@
                    tooltip-placement="top"
                    tooltip-trigger="mouseenter"
                    tooltip-enable="true"
-            >
-            <button style="float: right;" type="button" class="btn btn-warning fa fa-plus" ng-click="showgroupid()" ng-hide="groupidview">&nbsp;Unirte a un gurpo</button>
+                    >
+            <!--Sacar el true || para que ande el unirte a un grupo-->
+            <button style="float: right;" type="button" class="btn btn-warning fa fa-plus" ng-click="showgroupid()" ng-hide="true || groupidview">&nbsp;Unirte a un gurpo</button>
 
         </div>
     </div>
@@ -79,24 +82,14 @@
     <br/>
     <div id="viewdata"></div>
 
-    <div class="table-responsive">
+    <div class="table-responsive"  ng-show="dt">
         <div class="panel panel-primary">
             <div class="panel-heading">Reservas agregadas
-<!--
-                <div class="sw-search" >
-                    <div class="nav-search" id="nav-search">
-                        Filter: <span class="input-icon">
-                        <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filterBook" ng-change="resetLimit();"  autocomplete="off" type="text" style="width:300px;" focus>
-                        <i class="search-icon fa fa-search nav-search-icon"></i>
-                    </span>
-                    </div>
-                </div>
--->
             </div>
             <div class="panel-body">
                 <table class="table table-striped">
-                <!--<tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-ban fa-3x"></i>&nbsp;No data found</td></tr>-->
-                <tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-cog fa-3x fa-spin"></i>&nbsp;Loading</td></tr>
+                    <!--<tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-ban fa-3x"></i>&nbsp;No data found</td></tr>-->
+                    <tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-cog fa-3x fa-spin"></i>&nbsp;Loading</td></tr>
                     <tr>
                         <th>Nombre</th>
                         <th>Apellido</th>
@@ -124,6 +117,6 @@
     </div>
 
     <div style="float: right; padding-right: 35px;">
-        <button ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()">Continuar</button>
+        <h4 ng-show="Books.length>0" style="float: left; padding-bottom: 5px;">Cuando esten todos en la lista clickea aqui <span style="padding-right: 10px;" class="glyphicon glyphicon-arrow-right"></span></h4><button style="float: right;" ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()">Continuar</button>
     </div>
 </div>

@@ -10,3 +10,7 @@
     -ms-user-select: none;
     user-select: none;
 }
+
+.app-modal-sentToManifest .modal-dialog{
+    width: 1200px;
+}
