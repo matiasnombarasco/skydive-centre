@@ -17,11 +17,14 @@ tandemApp.config(['$routeProvider',
                 templateUrl: 'booking.html',
                 controller: 'BookingCtrl'
                 })
-            .when('/booksucess', {
-                templateUrl: 'booksucess/booksucess.html'
+            .when('/booksucess/:book', {
+                templateUrl: 'booksucess.html'
             })
             .when('/system', {
                 templateUrl: 'system.html',
+            })
+            .when('/:groupid', {
+                templateUrl: 'booking.html',
             })
 
 

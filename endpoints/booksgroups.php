@@ -6,17 +6,7 @@
  * Time: 2:18 p.m.
  */
 
-//here are you db data tronco
-/*
-$servername = "mysql.paracaidismorosario.com";
-$username = "paracaidismo";
-$password = "Mailg0syst3ms";
-$db = "reservas_paracaidismo";
-*/
-$servername = "127.0.0.1";
-$username = "root";
-$password = "mailgo";
-$db = "reservas_paracaidismo";
+include 'config.php';
 
 $requestParts = explode(':', $_GET['groupid']);
 
@@ -39,18 +29,26 @@ switch ($_SERVER['REQUEST_METHOD']) {
         $postdata = file_get_contents("php://input");
         $request = json_decode($postdata);
 
-        if (isset($request->bookdate)) {
-            $bookdate = $request->email;
+        $fieldupdate = '';
+
+        if (isset($request->schtime)) {
+            $fieldupdate .= "schtime='" . $request->schtime . "',";
         }
-        if (isset($request->time)) {
-            $booktime = $request->time;
+        if (isset($request->deposit)) {
+            $fieldupdate .= "deposit = '" . $request->deposit . "',";
+        }
+        if (isset($request->notes)) {
+            $fieldupdate .=  "notes='" . $request->notes . "',";
         }
 
-        if (isset($request->groupid) && $request->groupid > 0) {
-            $rawSql = "";
-        } else {
-            $rawSql = "";
+        if (isset($request->bookdate)) {
+            $fieldupdate .= "date ='" . $request->bookdate . "',";
         }
+
+        $fieldupdate = rtrim($fieldupdate, ',');
+
+        $rawSql = "UPDATE group_bookings SET " . $fieldupdate . " WHERE groupid='" . $groupid . "';";
+
         break;
     case "DELETE":
         $rawSql = "DELETE FROM tandem_bookings where id = " . $groupid;
@@ -66,14 +64,18 @@ $result = $conn->query($rawSql);
 if (!empty($conn->error)) {
     die($conn->error);
 }
-header('Content-Type: application/json');
+
 if (!empty($result->num_rows) && $result->num_rows > 0) {
     // output the result object as an array and the make it json! and echo it, so u can see it in the screen.
     while ($r = mysqli_fetch_assoc($result)) {
         $rows[] = array(
             'groupid' => $r['groupid'],
             'bookdate' => $r['date'],
-            'booktime' => $r['time']);
+            'schtime' => isset($r['schtime']) ? $r['schtime'] : '',
+            'deposit' => isset($r['deposit']) ? $r['deposit'] : '0',
+            'notes' => isset($r['notes']) ? $r['notes'] : ''
+        );
+
     }
     print json_encode($rows);
 }

@@ -1,3 +1,4 @@
+
 <uib-tabset>
 
 <uib-tab heading="Recepcion">
@@ -36,14 +37,16 @@
         <br/>
 
         <div style="display: inline-block;">
-            <div style="float: left; padding-right: 10px;"><h4>Listo para saltar? Elegi la fecha que quieras <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
+            <div style="float: left; padding-right: 10px;"><h4>Fecha <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
             <div class="input-group" style="width: 135px;">
-                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-click="updateBookList()" ng-model="dt" is-open="status.opened"  datepicker-options="dateOptions" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
+                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-change="updateBookList()" ng-model="dt" is-open="status.opened"  datepicker-options="dateOptions" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
           <span class="input-group-btn">
             <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
           </span>
             </div>
         </div>
+
+        <p><button id="btn-export" ng-click="export()">Export</button></p>
 
 
         <div class="table-responsive">
@@ -62,19 +65,20 @@
                 </div>
                 <div class="panel-body">
 
-                    <table class="table table-striped" style="font-size: small;">
+                    <table id="booktable" name="booktable" class="table table-striped" style="font-size: small;">
                         <tr>
+                            <th>Fecha</th>
                             <th>Horario</th>
                             <th>GroupID</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Telefono</th>
                             <th>email</th>
-                            <th>Fecha Nac</th>
-                            <th>Peso</th>
                             <th>Deposito</th>
                             <th>Saldo</th>
-                            <th>Accion</th>
+                            <th>Nota</th>
+                            <th>Horario/Pago</th>
+                            <th>Manifestar</th>
                         </tr>
 
                         <style>
@@ -83,22 +87,34 @@
                             }
                         </style>
 
-                        <tr ng-repeat="book in Books | filter:filtro" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                        <tr ng-repeat="book in Books | filter:filtro | orderBy:'schtime'" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                            <td>{{book.bookdate}}</td>
                             <td>{{book.schtime}}</td>
                             <td>{{book.groupid}}</td>
                             <td>{{book.firstname}}</td>
                             <td>{{book.lastname}}</td>
                             <td>{{book.phone}}</td>
                             <td>{{book.email}}</td>
-                            <td>{{book.dob}}</td>
-                            <td>{{book.weight}}</td>
                             <td>{{book.deposit | currency}}</td>
                             <td>{{book.pending | currency}}</td>
+                            <td>{{book.notes}}</td>
+                            <td style="width:100px">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-warning" ng-click="editTimePayment(book);">Horario/Pago</button>
+                                </div>
+                            </td>
                             <td style="width:100px">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-primary" ng-click="sendToManifest(book);">Manifestar</button>
                                 </div>
                             </td>
+                            <td style="width:100px">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-danger" ng-click="bookdelete(book);">Borrar</button>
+                                </div>
+                            </td>
+
+
                         </tr>
                     </table>
                  </div>

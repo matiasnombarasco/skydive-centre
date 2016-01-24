@@ -1,0 +1,46 @@
+<div class="modal-header">
+    <h3 class="modal-title">Agregar/Editar Horario/Pago</h3>
+</div>
+
+<div class="alert alert-success alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+</div>
+
+<div class="modal-body">
+    <form name="timePaymentForm" ng-submit="saveTimePayment()">
+        <div class="form-group">
+            <label>GroupID:</label>
+            <input ng-model="bookgroup.groupid" type="text" class="form-control" disabled>
+        </div>
+
+        <div class="form-group">
+            <label>Fecha Programada:</label>
+            <div class="input-group" style="width: 135px;">
+                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="bookgroup.bookdate" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false">
+                <span class="input-group-btn"><button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Hora Programada:</label>
+            <input ng-model="bookgroup.schtime" type="text" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label>Deposito/Reserva</label>
+            <input ng-model="bookgroup.deposit" type="text" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label>Nota</label>
+            <input ng-model="bookgroup.notes" type="text" class="form-control">
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-click="saveBookGroup()">Guardar</button>
+            <button class="btn btn-warning" type="button" ng-click="cancel();">Cancelar</button>
+        </div>
+    </form>
+</div>
+
+

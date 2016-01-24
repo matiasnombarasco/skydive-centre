@@ -14,7 +14,7 @@ $mail = new PHPMailer();
 //$guests = $_POST["guests"];
 //$time = $_POST["time"];
 
-$message = "hola"; //"<h1>".$name." has booked a table for ".$guests." at ".$time."</h1>";
+$message = $_POST["email"];
 
 $mail->IsSMTP();
 $mail->Host = "mail.paracaidismorosario.com";
@@ -30,12 +30,12 @@ $mail->SetFrom('info@paracaidismorosario.com', 'Paracaidismo Rosario');
 $mail->Subject    = "Reserva en Paracaidismo Rosario";
 $mail->AltBody    = "To view the message, please use an HTML compatible email viewer!";
 $mail->MsgHTML($message);
-    $address = "sebastian@aresca.com.ar";
-    $mail->AddAddress($address);
+$address = "sebastian@aresca.com.ar";
+$mail->AddAddress($address);
 
-    if(!$mail->Send()) {
-        echo "Mailer Error: " . $mail->ErrorInfo;
-    } else {
-        echo "Message sent!";
-    }
+if(!$mail->Send()) {
+    echo "Mailer Error: " . $mail->ErrorInfo;
+} else {
+    echo "Message sent!";
+}
 ?>
