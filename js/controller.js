@@ -42,7 +42,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             if ((!$scope.onUpdate) && (!$scope.intervalManifest)) {
 
                 var queryday = '';
-                if ($this.biggerthandate) {
+                if ($scope.biggerthandatelocal) {
                     queryday = '>'
                 };
 
@@ -59,7 +59,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 }
             }
 
-        },5000);
+        },3000);
 
         $scope.logoff = function() {
             localStorage.clear();
@@ -91,12 +91,14 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
         };
 
 
+        /*
         $http.get('endpoints/dateenabled.php', { cache: 'true'})
             .success(function(data) {
                 $scope.date = data;
                 $scope.date = $scope.date.replace("-","/").replace("-","/")
                 $scope.toggleDates();
             });
+        */
 
         // Select if new or edit
         $scope.groupid = $routeParams.groupid;
@@ -399,7 +401,12 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             $scope.dtdate = this.dt;
             var queryday = ''
             if (this.biggerthandate) {
+                $scope.biggerthandatelocal = this.biggerthandate
                 queryday = '>'
+            }
+            else
+            {
+                $scope.biggerthandatelocal = false;
             }
             queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
             $scope.promise = BookResource.query({date:queryday}).$promise.then(function(result){
