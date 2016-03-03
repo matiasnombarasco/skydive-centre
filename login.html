@@ -1,0 +1,42 @@
+<link rel="stylesheet" href="css/login.css" type="text/css" />
+
+
+<div class="container" ng-controller="loginCtrl">
+
+    <div class="row" id="pwd-container">
+        <div class="col-md-4"></div>
+
+        <div class="col-md-4">
+
+            <section class="login-form">
+                <div class="alert alert-success alert-dismissible" role="alert" ng-show="invaliduser">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <strong>Invalid username/password</strong>
+                </div>
+                <form role="login" cg-busy="{promise:promise,message:'Logging in'}">
+                    <img src="images/pr.png" class="img-responsive" alt=""  />
+                    <input type="text" ng-model="username" placeholder="username" required class="form-control input-lg" value="" />
+
+                    <input type="password" ng-model="password" class="form-control input-lg" id="password" placeholder="Password" required="" />
+
+
+                    <div class="pwstrength_viewport_progress"></div>
+
+
+                    <button type="button" ng-click="login()" class="btn btn-lg btn-primary btn-block">Sign in</button>
+
+                </form>
+
+                <div class="form-links">
+                    <a href="#">www.paracaidismorosario.com</a>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-4"></div>
+
+
+    </div>
+
+</div>
+

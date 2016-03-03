@@ -41,8 +41,8 @@ foreach ($requestarray as $request) {
     if (isset($request['phone'])) {
         $phone = $request['phone'];
     }
-    if (isset($request['dob'])) {
-        $dob = $request['dob'];
+    if (isset($request['dobdate'])) {
+        $dob = $request['dobdate'];
     }
     if (isset($request['weight'])) {
         $weight = $request['weight'];
@@ -56,7 +56,7 @@ foreach ($requestarray as $request) {
         $dob . "', '" .
         $weight . "', '" .
         $groupid . "', " .
-        "0,0),";
+        "0,0,'Y','N',0,'N'),";
 }
 
 $rawSQL = rtrim($rawSQL, ',') . ';';
@@ -216,7 +216,7 @@ function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl)
                                 <!--// Le recordamos-->
                                 <tr>
                                     <td colspan="2" style="padding:6px 0">
-                                        <p>Le recordamos que puede modificar su reserva en <a href="http://booking.paracaidismorosario.com/#/' . $groupid . '">booking.paracaidismorosario.com</a>, incluyendo:</p>
+                                        <p>Le recordamos que puede <a href="http://booking.paracaidismorosario.com/#/' . $groupid . '">modificar sureserva</a> en booking.paracaidismorosario.com, incluyendo:</p>
                                         <ul>
                                             <li>Agregar/eliminar participantes</li>
                                             <li>Ver o modificar el dia de la reserva</li>

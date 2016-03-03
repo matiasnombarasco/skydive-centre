@@ -1,3 +1,4 @@
+<button style="float: right" ng-click="logoff()">Log Off</button>
 
 <uib-tabset>
 
@@ -28,13 +29,26 @@
     </style>
 
     <hr/>
-    <div class="container disable-text-selection" ng-controller="BookingCtrl">
+
+    <label>Mariano:
+        <input type="checkbox" ng-model="mariano">
+    </label><br/>
+    <label>Matias:
+        <input type="checkbox" ng-model="matias">
+    </label><br/>
+    <label>Sebastian:
+        <input type="checkbox" ng-model="sebastian">
+    </label><br/>
+
+
+    <div class="container disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
                 Recepcion
             </div>
         </div>
         <br/>
+
 
         <div style="display: inline-block;">
             <div style="float: left; padding-right: 10px;"><h4>Fecha <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
@@ -45,9 +59,7 @@
           </span>
             </div>
         </div>
-
-        <p><button id="btn-export" ng-click="export()">Export</button></p>
-
+        <p><input type="checkbox" ng-model="biggerthandate" ng-change="updateBookList()">Todos los registro despues de la fecha</input></p>
 
         <div class="table-responsive">
             <div class="panel panel-primary">
@@ -63,7 +75,7 @@
 
 
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" cg-busy="{promise:promise,message:'Loading'}">
 
                     <table id="booktable" name="booktable" class="table table-striped" style="font-size: small;">
                         <tr>
@@ -87,7 +99,7 @@
                             }
                         </style>
 
-                        <tr ng-repeat="book in Books | filter:filtro | orderBy:'schtime'" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                        <tr ng-repeat="book in Books | filter:filtro | orderBy:['schtime','groupid']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
                             <td>{{book.bookdate}}</td>
                             <td>{{book.schtime}}</td>
                             <td>{{book.groupid}}</td>
@@ -120,6 +132,7 @@
                  </div>
              </div>
          </div>
+
     </div>
 
 
@@ -163,6 +176,7 @@
     </style>
 
     <hr/>
+
     <div class="container disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
@@ -170,33 +184,34 @@
             </div>
         </div>
         <br/>
-        <table class="table table-striped" style="font-size: small;">
-            <tr>
-                <th>Vuelos</th>
-                <th>Informacion Vuelo</th>
-                <th>Pasajeros</th>
-            </tr>
-            <tr>
-                <td>
 
-                </td>
-                <td>
+        <div class="panel-body" style="" cg-busy="{promise:promise,message:'Loading'}">
 
-                </td>
-                <td>
-                    Pasajeros manifestados
-                </td>
-            </tr>
-            <style>
-                .selected {
-                    background-color: lightgreen !important;
-                }
-            </style>
+            <p><button id="btn-export" ng-click="refreshManifest()">Refresh Manifest</button></p>
 
+            <table id="manifesttable" name="manifesttable" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
+                <tr>
+                    <th>Vuelo</th>
+                    <th>Alumno</th>
+                    <th>TI</th>
+                    <th>Altura</th>
+                </tr>
 
-        </table>
+                <style>
+                    .selected {
+                        background-color: lightgreen !important;
+                    }
+                </style>
+
+                <tr ng-repeat="load in manifestLoads | filter:filtro | orderBy:['loadnumber']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}" ng-style="setLoadColor(load.loadnumber)">
+                    <td>{{load.loadnumber}}</td>
+                    <td>{{load.customerName}}</td>
+                    <td>{{load.TIname}}</td>
+                    <td>{{load.altitude}}</td>
+                </tr>
+            </table>
+        </div>
     </div>
-
 
 </uib-tab>
 

@@ -4,11 +4,12 @@ var tandemApp = angular.module('tandemApp', [
     'ngRoute',
     'bookingService',
     'ngAnimate',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'cgBusy'
 ]);
 
 tandemApp.config(['$routeProvider',
-    function ($routeProvider, $locationProvider) {
+    function ($routeProvider) {
         $routeProvider
             .when('/', {
                 templateUrl: 'booking.html',
@@ -22,10 +23,12 @@ tandemApp.config(['$routeProvider',
             })
             .when('/system', {
                 templateUrl: 'system.html',
+                controller: 'SystemCtrl'
+            })
+            .when('/login', {
+                templateUrl: 'login.html',
             })
             .when('/:groupid', {
                 templateUrl: 'booking.html',
             })
-
-
     }]);

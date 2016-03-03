@@ -16,3 +16,9 @@ bookingService.factory('BooksGroupsResource', ['$resource',
     function($resource) {
         return $resource('endpoints/booksgroups/groupid', { groupid: '@groupid' });
     }]);
+
+bookingService.factory('ManifestShowResource', ['$resource',
+    function($resource) {
+        return $resource('endpoints/showmanifest/date', { date: '@date' });
+    }]);
+
