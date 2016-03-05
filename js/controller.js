@@ -5,8 +5,24 @@
 
 /* Controllers */
 
-tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', 'ManifestShowResource', '$interval',
-    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, ManifestShowResource, $interval) {
+tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', 'ManifestShowResource', '$interval', 'staffStatusResource', '$timeout',
+    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, ManifestShowResource, $interval, $staffStatusResource, $timeout) {
+
+        $scope.alert = function(){
+
+            //reset
+            $scope.showError = false;
+            $scope.doFade = false;
+
+            $scope.showError = true;
+
+            $scope.errorMessage = 'Error has ocurred!!!';
+
+            $timeout(function(){
+                $scope.doFade = true;
+            }, 2500);
+        };
+
 
         $scope.onUpdate = false;
 
@@ -47,7 +63,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 };
 
                 queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
-                if (!(queryday == null)) {
+                if (!(queryday == "undefined")) {
                     $scope.intervalManifest = true;
                     BookResource.query({date: queryday}).$promise.then(function (result) {
                         $scope.Books = result;
@@ -65,6 +81,12 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             localStorage.clear();
             $http.post('endpoints/logoff.php')
             $location.path('login');
+        };
+
+        $scope.staffStatus = $staffStatusResource.query();
+        $scope.updateStaffLoggedin = function(staff){
+            var staffcopy = angular.copy(staff);
+            staffcopy.$save();
         };
 
 
@@ -143,10 +165,13 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                     $scope.Books.splice($scope.varindex, 1);
 
                     $scope.onUpdate = true;
-                    $http.post('endpoints/automanifest.php', item).success(function() {
+                    $http.post('endpoints/automanifest.php', item).success(function(data)
+                    {
                             $scope.onUpdate = false;
-                        }
-                    );
+                            if (data.error == 'error') {
+                                $scope.alert();
+                            };
+                    });
 
                     /*
                     if (typeof(book) === "object") // update

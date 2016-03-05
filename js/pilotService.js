@@ -22,3 +22,8 @@ bookingService.factory('ManifestShowResource', ['$resource',
         return $resource('endpoints/showmanifest/date', { date: '@date' });
     }]);
 
+
+bookingService.factory('staffStatusResource', ['$resource',
+    function($resource) {
+        return $resource('endpoints/staffstatus/staff', { staff: '@staff' });
+    }]);

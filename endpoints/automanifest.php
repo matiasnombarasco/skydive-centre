@@ -108,7 +108,7 @@ if (isset($_SESSION['username'])) {
     $rawSQL = "
 SELECT vTIs.id as TI, (count(*) + vTIs.jumpsnumberset) as TIcount, (sum(weight)/count(*)) as weightagv FROM
 (SELECT vTI.id, vTI.jumpsnumberset, loads_skydivers.id as jumpid FROM (SELECT * FROM tandem_bookings WHERE isTandemInstructor = 'Y'
-AND tandem_bookings.id NOT IN (SELECT skydiverid FROM loads_skydivers WHERE loadid = $loadid)
+AND loggedin = 1 AND tandem_bookings.id NOT IN (SELECT skydiverid FROM loads_skydivers WHERE loadid = $loadid)
 ) as vTI LEFT JOIN loads_skydivers
 ON  vTI.id = loads_skydivers.skydiverid) as vTIs LEFT JOIN
 (SELECT skydiverid as customer, tandem_bookings.weight, loads_skydivers.id as id FROM loads_skydivers, tandem_bookings
@@ -141,7 +141,9 @@ GROUP BY vTIs.id ORDER BY TICount, weightagv LIMIT 1;";
 
     $result = $conn->query($rawSQL);
     if (!empty($conn->error)) {
-        die($conn->error);
+        $error = array('error' => 'error');
+        print json_encode($error);
+        die();
     }
 
 
@@ -203,8 +205,6 @@ GROUP BY vTIs.id ORDER BY weightagv DESC;
                 skydiverid = " . $TI[$x]['TI'] . "
                 WHERE id = " . $customers[$x]['id'] . " AND LEFT(jumptype,2) = 'TI';";
     }
-
-    var_dump($rawSQL);
 
     if (!$conn->multi_query($rawSQL)) {
         die($conn->error);

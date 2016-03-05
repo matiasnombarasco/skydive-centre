@@ -1,45 +1,29 @@
+<style>
+    .page-title {
+        background-color: #a7ddea !important;
+        font-size: 29px;
+        font-weight: bold;
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    @media (min-width: 1200px) {
+        .container {
+            width: 100% !important;
+        }
+    }
+
+
+</style>
+
 <button style="float: right" ng-click="logoff()">Log Off</button>
+
+<div data-ng-show="showError" ng-class="{fade:doFade}" class="alert alert-danger"><strong>Error:</strong> {{errorMessage}}</div>
+
 
 <uib-tabset>
 
 <uib-tab heading="Recepcion">
-
-    <img alt="Paracaidismo Rosario" src="images/pr.png" style="
-            padding-top: 20px;
-            display: block;
-            width: auto;
-            height: auto;
-            max-height: 80px;
-            max-width: 100%;
-            float: right;
-            border: 0;
-            -ms-interpolation-mode: bicubic;
-            ">
-
-    <style>
-        .page-title {
-            background-color: #a7ddea !important;
-            font-size: 29px;
-            font-weight: bold;
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-
-    </style>
-
-    <hr/>
-
-    <label>Mariano:
-        <input type="checkbox" ng-model="mariano">
-    </label><br/>
-    <label>Matias:
-        <input type="checkbox" ng-model="matias">
-    </label><br/>
-    <label>Sebastian:
-        <input type="checkbox" ng-model="sebastian">
-    </label><br/>
-
 
     <div class="container disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
@@ -67,14 +51,13 @@
                     <div class="sw-search" >
                         <div class="nav-search" id="nav-search">
                             Filtro: <span class="input-icon">
-                            <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtro" autocomplete="off" type="text" style="width:300px;" focus>
+                            <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtrobooktable" autocomplete="off" type="text" style="width:300px;" focus>
                             <i class="search-icon fa fa-search nav-search-icon"></i>
                         </span>
                         </div>
                     </div>
-
-
                 </div>
+
                 <div class="panel-body" cg-busy="{promise:promise,message:'Loading'}">
 
                     <table id="booktable" name="booktable" class="table table-striped" style="font-size: small;">
@@ -99,7 +82,7 @@
                             }
                         </style>
 
-                        <tr ng-repeat="book in Books | filter:filtro | orderBy:['schtime','groupid']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                        <tr ng-repeat="book in Books | filter:filtrobooktable | orderBy:['schtime','groupid']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
                             <td>{{book.bookdate}}</td>
                             <td>{{book.schtime}}</td>
                             <td>{{book.groupid}}</td>
@@ -143,40 +126,6 @@
 
 <uib-tab heading="Manifiesto">
 
-    <img alt="Paracaidismo Rosario" src="images/pr.png"
-         style="
-            padding-top: 20px;
-            display: block;
-            width: auto;
-            height: auto;
-            max-height: 80px;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 100%;
-            border: 0;
-            -ms-interpolation-mode: bicubic;
-            ">
-
-    <style>
-        .page-title {
-            background-color: #a7ddea !important;
-            font-size: 29px;
-            font-weight: bold;
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        @media (min-width: 1200px) {
-            .container {
-                width: 100% !important;
-            }
-        }
-
-
-    </style>
-
-    <hr/>
-
     <div class="container disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
@@ -189,7 +138,7 @@
 
             <p><button id="btn-export" ng-click="refreshManifest()">Refresh Manifest</button></p>
 
-            <table id="manifesttable" name="manifesttable" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
+            <table id="loadstable" name="loadstable" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
                 <tr>
                     <th>Vuelo</th>
                     <th>Alumno</th>
@@ -197,13 +146,7 @@
                     <th>Altura</th>
                 </tr>
 
-                <style>
-                    .selected {
-                        background-color: lightgreen !important;
-                    }
-                </style>
-
-                <tr ng-repeat="load in manifestLoads | filter:filtro | orderBy:['loadnumber']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}" ng-style="setLoadColor(load.loadnumber)">
+                <tr ng-repeat="load in manifestLoads | orderBy:['loadnumber']" ng-style="setLoadColor(load.loadnumber)">
                     <td>{{load.loadnumber}}</td>
                     <td>{{load.customerName}}</td>
                     <td>{{load.TIname}}</td>
@@ -217,6 +160,60 @@
 
 <!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
 
+<uib-tab heading="Statt Management">
+
+    <div class="container disable-text-selection">
+        <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
+            <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
+                Staff
+            </div>
+        </div>
+        <br/>
+
+
+        <div class="table-responsive">
+            <div class="panel panel-primary">
+                <div class="panel-heading">Staff
+                    <div class="sw-search">
+                        <div class="nav-search" id="nav-search">
+                            Filtro: <span class="input-icon">
+                            <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtrostafftable" autocomplete="off" type="text" style="width:300px;" focus>
+                            <i class="search-icon fa fa-search nav-search-icon"></i>
+                        </span>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="panel-body" style="" cg-busy="{promise:promise,message:'Loading'}">
+
+                <table id="stafftable" name="stafftable" class="table table-bordered">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                    </tr>
+
+                    <style>
+                        .selected {
+                            background-color: lightgreen !important;
+                        }
+                    </style>
+
+                    <tr ng-repeat="staff in staffStatus | filter:filtrostafftable | orderBy:['loadnumber']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}" ng-style="setLoadColor(load.loadnumber)">
+                        <td>{{staff.firstname}}</td>
+                        <td>
+                            <input ng-model="staff.loggedin" type="checkbox" ng-checked="{{staff.loggedin}}" ng-click="updateStaffLoggedin(staff)" />
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</uib-tab>
+
+<!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
 
 
 </uib-tabset>
+
+
