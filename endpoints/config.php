@@ -9,6 +9,7 @@
 
 date_default_timezone_set('America/Buenos_Aires');
 
+
 $servername = "mysql.paracaidismorosario.com";
 $username = "paracaidismo";
 $password = "Mailg0syst3ms";

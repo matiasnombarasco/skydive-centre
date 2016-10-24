@@ -9,7 +9,7 @@
         <div class="col-md-4">
 
             <section class="login-form">
-                <div class="alert alert-success alert-dismissible" role="alert" ng-show="invaliduser">
+                <div lass="alert alert-success alert-dismissible" role="alert" ng-show="invaliduser">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     <strong>Invalid username/password</strong>
                 </div>
@@ -39,4 +39,22 @@
     </div>
 
 </div>
+
+<!--
+<div>
+    <script type="text/ng-template" id="customTemplate.html">
+        <a>
+            <span bind-html-unsafe="match.label | typeaheadHighlight:query"></span>
+            <i>{{match.model.firstname}}, {{match.model.lastname}}</i>
+        </a>
+    </script>
+    <form class="form-search" ng-controller="loginCtrl">
+        <div style="width:350px;" cg-busy="{promise:promise,message:'Loading'}">
+        <input type="text" ng-change="searchJumper()" ng-model="selectedJumper" placeholder="Search Jumper" typeahead="jumper as jumper.firstname for jumper in jumpers | filter:$viewValue | limitTo:10" typeahead-min-length='1' typeahead-on-select='onSelectPart($item, $model, $label)' typeahead-template-url="customTemplate.html" class="form-control" style="width:350px;" ng-disabled="searching" focus-me="!searching">
+        </div>
+        <i class="icon-search nav-search-icon"></i>
+    </form>
+</div>
+-->
+
 

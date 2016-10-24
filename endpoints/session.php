@@ -8,18 +8,15 @@
 
 session_start();
 
-$row[] = array('session' => 'true');
+$row = array('session' => 'false');
 
 if (isset($_SESSION['username'])) {
-    $rows[] = array(
+    $row = array(
         'session' => 'true'
     );
-}
-}
+};
 
-print json_encode($rows);
-
-}
+print json_encode($row);
 
 ?>
 

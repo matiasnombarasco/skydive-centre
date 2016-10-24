@@ -25,7 +25,7 @@
 
 <uib-tab heading="Recepcion">
 
-    <div class="container disable-text-selection">
+    <br class="container disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
                 Recepcion
@@ -38,22 +38,51 @@
             <div style="float: left; padding-right: 10px;"><h4>Fecha <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
             <div class="input-group" style="width: 135px;">
                 <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-change="updateBookList()" ng-model="dt" is-open="status.opened"  datepicker-options="dateOptions" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
-          <span class="input-group-btn">
-            <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-          </span>
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                </span>
             </div>
         </div>
-        <p><input type="checkbox" ng-model="biggerthandate" ng-change="updateBookList()">Todos los registro despues de la fecha</input></p>
+
+        <div style="display: inline-block;"><input type="checkbox" ng-model="biggerthandate" ng-change="updateBookList()">Todos los registro despues de la fecha</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="limbo" ng-change="updateBookList()">Limbo</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="manifested" ng-change="updateBookList()">Manifested</input></div>
 
         <div class="table-responsive">
             <div class="panel panel-primary">
                 <div class="panel-heading">Reservas {{Books.length}}
                     <div class="sw-search" >
                         <div class="nav-search" id="nav-search">
-                            Filtro: <span class="input-icon">
+                            <!--
+                            Filtro:
+                            <span class="input-icon">
                             <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtrobooktable" autocomplete="off" type="text" style="width:300px;" focus>
                             <i class="search-icon fa fa-search nav-search-icon"></i>
-                        </span>
+                            </span>
+                            -->
+                            <div style="inline-block; float: right;">
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-warning" ng-click="editTimePayment(Books[indice]);">Horario/Pago</button>
+                                    </div>
+                                </td>
+                                <td style="width:80px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success" ng-click="editBooking(Books[indice]);">Editar</button>
+                                    </div>
+                                </td>
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-primary" ng-click="sendToManifest(Books[indice]);">Manifestar</button>
+                                    </div>
+                                </td>
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-danger" ng-click="bookdelete(Books[indice]);">Borrar</button>
+                                    </div>
+                                </td>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -72,8 +101,6 @@
                             <th>Deposito</th>
                             <th>Saldo</th>
                             <th>Nota</th>
-                            <th>Horario/Pago</th>
-                            <th>Manifestar</th>
                         </tr>
 
                         <style>
@@ -88,28 +115,12 @@
                             <td>{{book.groupid}}</td>
                             <td>{{book.firstname}}</td>
                             <td>{{book.lastname}}</td>
-                            <td>{{book.phone}}</td>
+                            <td><a href="tel:{{book.phone}}">{{book.phone}}</a></td>
+                            <!--<td><a href="whatsapp://{{book.phone}}">{{book.phone}}</a></td>-->
                             <td>{{book.email}}</td>
                             <td>{{book.deposit | currency}}</td>
                             <td>{{book.pending | currency}}</td>
                             <td>{{book.notes}}</td>
-                            <td style="width:100px">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-warning" ng-click="editTimePayment(book);">Horario/Pago</button>
-                                </div>
-                            </td>
-                            <td style="width:100px">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-primary" ng-click="sendToManifest(book);">Manifestar</button>
-                                </div>
-                            </td>
-                            <td style="width:100px">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-danger" ng-click="bookdelete(book);">Borrar</button>
-                                </div>
-                            </td>
-
-
                         </tr>
                     </table>
                  </div>
@@ -160,6 +171,7 @@
 
 <!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
 
+
 <uib-tab heading="Statt Management">
 
     <div class="container disable-text-selection">
@@ -169,7 +181,6 @@
             </div>
         </div>
         <br/>
-
 
         <div class="table-responsive">
             <div class="panel panel-primary">
@@ -184,27 +195,28 @@
                     </div>
                 </div>
 
-            <div class="panel-body" style="" cg-busy="{promise:promise,message:'Loading'}">
+                <div class="panel-body" style="" cg-busy="{promise:promise,message:'Loading'}">
 
-                <table id="stafftable" name="stafftable" class="table table-bordered">
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Estado</th>
-                    </tr>
+                    <table id="stafftable" name="stafftable" class="table table-bordered">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                        </tr>
 
-                    <style>
-                        .selected {
-                            background-color: lightgreen !important;
-                        }
-                    </style>
+                        <style>
+                            .selected {
+                                background-color: lightgreen !important;
+                            }
+                        </style>
 
-                    <tr ng-repeat="staff in staffStatus | filter:filtrostafftable | orderBy:['loadnumber']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}" ng-style="setLoadColor(load.loadnumber)">
-                        <td>{{staff.firstname}}</td>
-                        <td>
-                            <input ng-model="staff.loggedin" type="checkbox" ng-checked="{{staff.loggedin}}" ng-click="updateStaffLoggedin(staff)" />
-                        </td>
-                    </tr>
-                </table>
+                        <tr ng-repeat="staff in staffStatus | filter:filtrostafftable | orderBy:['loadnumber']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}" ng-style="setLoadColor(load.loadnumber)">
+                            <td>{{staff.firstname}}</td>
+                            <td>
+                                <input ng-model="staff.loggedin" type="checkbox" ng-checked="{{staff.loggedin}}" ng-click="updateStaffLoggedin(staff)" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -213,7 +225,54 @@
 
 <!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
 
+<uib-tab heading="Manifiest Management">
+
+    <div class="container disable-text-selection">
+        <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
+            <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
+                Manifiesto
+            </div>
+        </div>
+        <br/>
+
+        <div class="panel-body" style="" cg-busy="{promise:promise,message:'Loading'}">
+
+            <p><button id="btn-export" ng-click="refreshManifest()">Refresh Manifest</button></p>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-success" ng-click="editLoads();">Editar</button>
+            </div>
+
+
+            <table ng-hide="manifestLoads.length == 1" id="loadstable" name="loadstable" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
+                <tr>
+                    <th>Vuelo</th>
+                    <th>Alumno</th>
+                    <th>TI</th>
+                    <th>Altura</th>
+                    <th>Remover</th>
+                </tr>
+
+                <tr ng-repeat="load in manifestLoads | orderBy:['loadnumber']" ng-style="setLoadColor(load.loadnumber)">
+                    <td>{{load.loadnumber}}</td>
+                    <td>{{load.customerName}}</td>
+                    <td>{{load.TIname}}</td>
+                    <td>{{load.altitude}}</td>
+                    <td style="width:100px">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-danger" ng-click="removeJumperFromLoad(book);">Remover</button>
+                        </div>
+                    </td>
+
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</uib-tab>
+
+<!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
+
+
 
 </uib-tabset>
-
-

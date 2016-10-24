@@ -6,10 +6,7 @@
  * Time: 6:15 p.m.
  */
 
-$servername = "mysql.paracaidismorosario.com";
-$username = "paracaidismo";
-$password = "Mailg0syst3ms";
-$db = "easymanifest";
+include 'config.php';
 
 $conn = new mysqli($servername, $username, $password, $db);
 

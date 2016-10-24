@@ -18,8 +18,13 @@
             <div class="input-group" style="width: 135px;">
                 <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="bookgroup.bookdate" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false">
                 <span class="input-group-btn"><button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button></span>
+                <button class="btn btn-warning" style="display: inline-block;" type="button" ng-click="saveToLimbo()">Send to Limbo</button>
             </div>
         </div>
+
+
+
+        <!--<div style="display: inline-block;"><input type="checkbox" ng-model="sendtolimbo">Send to Limbo</input></div>-->
 
         <div class="form-group">
             <label>Hora Programada:</label>

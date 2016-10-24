@@ -13,7 +13,7 @@
 
 
 <hr/>
-<div class="container disable-text-selection" ng-controller="BookingCtrl">
+<div class="container disable-text-selection" ng-controller="BookingCtrl"  cg-busy="{promise:promise,message:'Reservando'}">
 
     <style>
         .btn[disabled] {
@@ -28,6 +28,7 @@
         }
     </style>
 
+    <div data-ng-show="showError" ng-class="{fade:doFade}" class="alert alert-danger"><strong>Error:</strong> {{errorMessage}}</div>
     <div class="alert alert-success alert-dismissible" role="alert" ng-show="invalidGroupID">
         <button type="button" ng-model="invalidGroupIDButton" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <strong>ID de grupo invalido</strong> Por favor ingrese un ID valido.
@@ -100,7 +101,7 @@
                         }
                     </style>
 
-                    <tr ng-repeat="book in Books" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                    <tr ng-repeat="book in Books | filter:{deleted:'!true'}"  ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
                         <td>{{book.firstname}}</td><td>{{book.lastname}}</td>
                         <td style="width:100px">
                             <div class="btn-group">
@@ -114,8 +115,13 @@
         </div>
     </div>
 
+
+
     <div style="float: right; padding-right: 35px;">
-        <h4 ng-show="Books.length>0" style="float: left; padding-bottom: 5px;">Cuando esten todos en la lista clickea aqui <span style="padding-right: 10px;" class="glyphicon glyphicon-arrow-right"></span></h4><button style="float: right;" ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()">Continuar</button>
+        <h4 ng-show="Books.length>0" style="float: left; padding-bottom: 5px;">Cuando esten todos en la lista clickea aqui <span style="padding-right: 10px;" class="glyphicon glyphicon-arrow-right"></span></h4>
+        <button style="float: right; margin-left: 10px:" ng-show="groupidview && Books.length>0" type="button" class="btn btn-warning fa" ng-click="refreshGroup()">Cancelar</button>
+        <button style="float: right;" ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()">Continuar</button>
+
     </div>
 
 </div>

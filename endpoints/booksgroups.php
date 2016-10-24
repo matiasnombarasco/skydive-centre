@@ -6,9 +6,9 @@
  * Time: 2:18 p.m.
  */
 
-session_start();
+//session_start();
 
-if (isset($_SESSION['username'])) {
+//if (isset($_SESSION['username'])) {
 
 
     include 'config.php';
@@ -55,9 +55,6 @@ if (isset($_SESSION['username'])) {
             $rawSql = "UPDATE group_bookings SET " . $fieldupdate . " WHERE groupid='" . $groupid . "';";
 
             break;
-        case "DELETE":
-            $rawSql = "DELETE FROM tandem_bookings where id = " . $groupid;
-            break;
         default:
             if (isset($_GET["groupid"])) {
                 $rawSql = "SELECT * FROM group_bookings WHERE groupid = '" . $groupid . "'";
@@ -85,6 +82,6 @@ if (isset($_SESSION['username'])) {
         print json_encode($rows);
     }
 
-}
+//}
 
 ?>

@@ -1,12 +1,15 @@
 <?php
 
+error_reporting(0);
 include 'config.php';
 
 $conn = new mysqli($servername, $username, $password, $db);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    $error = array('error' => 'error');
+    print json_encode($error);
+    die();
 }
 
 $postdata = file_get_contents("php://input");
@@ -18,7 +21,9 @@ $paymenturl = array_values($requestarray)[0]['paymenturl'];
 $bookedit = array_values($requestarray)[0]['bookedit'];
 
 if ($bookedit) {
-    $rawSQL = "DELETE from tandem_bookings WHERE groupid='" . $groupid . "';UPDATE group_bookings SET date='" . $bookdate . "' WHERE groupid='" . $groupid . "';";
+
+
+    $rawSQL = "UPDATE group_bookings SET date='" . $bookdate . "' WHERE groupid='" . $groupid . "';";
 }
 else
 {
@@ -30,39 +35,55 @@ $rawSQL = $rawSQL . "INSERT INTO tandem_bookings VALUES ";
 
 foreach ($requestarray as $request) {
 
+    $id = '0';
     $email = "";
     $phone = "";
-    $dob = "";
-    $weight = "";
+    $dob = "NULL";
+    $weight = "NULL";
+    $deleted = '0';
+    $dni = '0';
 
+    if (isset($request['id'])) {
+        $id = $request['id'];
+    }
     if (isset($request['email'])) {
         $email = $request['email'];
     }
     if (isset($request['phone'])) {
         $phone = $request['phone'];
     }
+
     if (isset($request['dobdate'])) {
-        $dob = $request['dobdate'];
+        $dob = "'" . $request['dobdate'] . "'";
     }
     if (isset($request['weight'])) {
-        $weight = $request['weight'];
+        $weight = "'" . $request['weight'] . "'";
+    }
+    if (isset($request['deleted'])) {
+        $deleted = $request['deleted'];
     }
 
-    $rawSQL = $rawSQL . "('', '" .
+    if (isset($request['dni'])) {
+        $dni = $request['dni'];
+    }
+
+    $rawSQL = $rawSQL . "($id, '" .
         $request['firstname'] . "', '" .
         $request['lastname'] . "', '" .
         $email . "', '" .
-        $phone . "', '" .
-        $dob . "', '" .
-        $weight . "', '" .
+        $phone . "', " .
+        $dob . ", " .
+        $weight . ", '" .
         $groupid . "', " .
-        "0,0,'Y','N',0,'N'),";
+        "0," . $deleted . ",'Y','N',0,'0',$dni),";
 }
 
-$rawSQL = rtrim($rawSQL, ',') . ';';
+$rawSQL = rtrim($rawSQL, ',') . " ON DUPLICATE KEY UPDATE deleted = VALUES(deleted);";
 
 if (!$conn->multi_query($rawSQL)) {
-    die($conn->error);
+    $error = array('error' => 'error');
+    print json_encode($error);
+    die();
 };
 
 while($conn->more_results())
@@ -77,8 +98,11 @@ while($conn->more_results())
 $rawSQL = "SELECT * FROM tandem_bookings WHERE deleted = 0 AND groupid = '" . $groupid  . "';";
 
 $result = $conn->query($rawSQL);
-if (!empty($conn->error)) {
-    die($conn->error);
+
+if ($conn->connect_error) {
+    $error = array('error' => 'error');
+    print json_encode($error);
+    die();
 }
 
 $pasajeros = '';
@@ -101,7 +125,7 @@ exit;
 
 function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl)
     {
-        $price = $count * 1650;
+        $price = $count * 1700;
         $deposit = 0;
         $total = $price - $deposit;
         $textmail = '<html>
@@ -260,7 +284,7 @@ function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl)
                                                                             <img src="http://reservas.paracaidismorosario.com/images/bgPlaneDark.gif" border="0"></td>
                                                                         <td style="padding:1px 4px 7px;width:110px"><b>' . $bookdate . '</b></td>
                                                                         <td style="padding:1px 4px 7px"><b>|</b></td>
-                                                                        <td style="padding:1px 4px 7px"><div style="padding-bottom:1px"><b>Salto Bautismo de Paracaidismo / Lugar: Aeroclub Casilda</b></div></td>
+                                                                        <td style="padding:1px 4px 7px"><div style="padding-bottom:1px"><b>Salto Bautismo de Paracaidismo / Lugar: Aeroclub Victoria</b></div></td>
                                                                     </tr>
                                                                     </tbody>
                                                                 </table>
@@ -432,7 +456,7 @@ inapropiada. Normalmente la actividad dura entre una y dos horas, pero le recome
 Con el fin de participar en cualquier actividad relacionada con paracaidismo, primero debe firmar y ejecutar un acuerdo de contrato legal que exime de ciertos DERECHOS antes de su
 participacion en cualquier actividad relacionada con paracaidismo. Usted debe tener al menos 18 anos o mas el dia en que usted realizara el salto. Debera presentar carnet de identidad
 legal al momento del check-in. Si usted esta realizando esta reserva en nombre de otras personas, queda entendido que las misma tienen en conocimiento todos los terminos establecidos
-en este docuemnto. PARACAIDISMO ROSARIO se encuentra solamente en el Aeroclub Casilda, Ruta 92 Km 1.5 - Casilda, Santa Fe.</p>
+en este docuemnto. PARACAIDISMO ROSARIO se encuentra solamente en el Aeroclub Victoria, Ruta 11 Km 111 - Victoria, Entre Riso.</p>
                                             </tbody>
                                         </table>
 

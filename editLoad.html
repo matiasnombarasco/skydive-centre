@@ -1,0 +1,21 @@
+<div class="modal-header">
+    <h3 class="modal-title">Edit Load</h3>
+</div>
+
+<div class="modal-body">
+
+        <div class="form-group">
+            <md-select ng-model="editLoad.selectedTI" placeholder="Instructor">
+                <md-option ng-repeat="loadTI in editLoadTIs" value="{{ id }}">{{ firsname }}</md-option>
+            </md-select>
+        </div>
+
+
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-disabled="bookingForm.$invalid" ng-click="saveBook()">Guardar</button>
+            <button class="btn btn-warning" type="button" ng-click="cancel();">Cancelar</button>
+        </div>
+    </form>
+</div>
+
+

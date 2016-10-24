@@ -74,7 +74,7 @@ if (isset($_SESSION['username'])) {
                             0,
                             'Y',
                             '3000',
-                            '',
+                            0,
                             4);
                             ";
 
@@ -141,6 +141,7 @@ GROUP BY vTIs.id ORDER BY TICount, weightagv LIMIT 1;";
 
     $result = $conn->query($rawSQL);
     if (!empty($conn->error)) {
+        var_dump($conn->error);
         $error = array('error' => 'error');
         print json_encode($error);
         die();

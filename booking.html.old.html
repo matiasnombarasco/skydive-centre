@@ -1,0 +1,102 @@
+<link rel="stylesheet" href="css/booking.css" type="text/css" />
+<link rel="stylesheet" href="css/calendar.css" type="text/css" />
+
+<div class="container disable-text-selection" ng-controller="BookingCtrl"  cg-busy="{promise:promise,message:'Cargando'}">
+
+    <style>
+        .btn[disabled] {
+            opacity: 0.60;
+            filter: alpha(opacity=90);
+            background-color: #690000;
+            color: #777;
+        }
+        .datepicker {
+            background-color: #fff ;
+            color: #333 ;
+        }
+    </style>
+
+
+    <div data-ng-show="showError" ng-class="{fade:doFade}" class="alert alert-danger"><strong>Error:</strong> {{errorMessage}}</div>
+    <div class="alert alert-success alert-dismissible" role="alert" ng-show="invalidGroupID">
+        <button type="button" ng-model="invalidGroupIDButton" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <strong>ID de grupo invalido</strong> Por favor ingrese un ID valido.
+    </div>
+
+    <div class="row" id="pwd-container">
+        <div class="col-md-4"></div>
+
+        <div class="col-md-4">
+
+            <section style="margin-top: 60px;">
+                <img src="images/pr.png" class="img-responsive" alt=""  />
+
+                <section style="margin-top: 60px;">
+
+                    <div style="text-align: center;">
+                        <h4>Listo para saltar?</h4>
+                        <h4>Elegi la fecha que quieras</h4>
+                    </div>
+
+                    <div class="well well-sm">
+                        <calendar ng-model="currentDate" calendar-mode="mode" event-source="eventSource"
+                                  range-changed="reloadSource(startTime, endTime)"
+                                  event-selected="onEventSelected(event)"
+                                  time-selected="onTimeSelected(selectedTime)"></calendar>
+                    </div>
+
+
+                    <!--<span class="input-group-btn"><button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button></span>-->
+                </section>
+
+
+
+                <form role="login" cg-busy="{promise:promise,message:'Logging in'}">
+                    <input type="text" ng-model="username" placeholder="username" required class="form-control input-lg" value="" />
+
+                    <input type="password" ng-model="password" class="form-control input-lg" id="password" placeholder="Password" required="" />
+
+
+                    <div class="pwstrength_viewport_progress"></div>
+
+
+                    <button type="button" ng-click="login()" class="btn btn-lg btn-primary btn-block">Sign in</button>
+
+                </form>
+
+                <div class="form-links">
+                    <a href="#">www.paracaidismorosario.com</a>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-4"></div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

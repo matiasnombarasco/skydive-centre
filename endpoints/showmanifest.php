@@ -46,7 +46,7 @@ WHERE TItable.id = TLtable.id) AS CustomerTI, loads
 WHERE CustomerTI.loadid = loads.loadid) as vloads, tandem_bookings
 WHERE tandem_bookings.id = vloads.TI) AS LoadsTI
 
-WHERE LoadsCustomers.id = LoadsTI.id AND LoadsCustomers.date = '$date' ORDER BY LoadsCustomers.loadnumber";
+WHERE LoadsCustomers.id = LoadsTI.id AND LoadsCustomers.date = '$date' ORDER BY LoadsCustomers.loadnumber, LoadsCustomers.customerName";
 
     $result = $conn->query($rawSQL);
     if (!empty($conn->error)) {
