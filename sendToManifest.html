@@ -3,54 +3,120 @@
 </div>
 
 <div class="modal-body">
-        <div class="form-group">
-            <label>Nombre *</label>
-            <input ng-model="book.firstname" type="text" class="form-control" placeholder="Nombre" autofocus required>
-        </div>
 
-        <div class="form-group">
-            <label>Apellido *</label>
-            <input ng-model="book.lastname" type="text" class="form-control" placeholder="Apellido" required>
-        </div>
+    <md-content>
+        <md-tabs md-dynamic-height md-border-bottom md-selected="mdselected">
 
-        <div class="form-group">
-            <label>DNI *</label>
-            <input ng-model="book.dni" type="text" class="form-control" placeholder="DNI" required ng-required="first">
-        </div>
+        <md-tab label="Detalles">
+            <md-content style="padding: 4px;">
 
-        <div class="form-group">
-            <label>e-mail</label>
-            <input ng-model="book.email" type="email" class="form-control" placeholder="email" ng-required="first">
-        </div>
+            <div class="form-group" style="display: inline-block;">
+                <label>Nombre *</label>
+                    <input ng-model="book.firstname" type="text" class="form-control" placeholder="Nombre" autofocus required>
+                </div>
 
-        <div class="form-group">
-            <label>Telefono</label>
-            <input ng-model="book.phone" type="text" class="form-control" placeholder="Telefono" ng-required="first">
-        </div>
-        <div class="form-group">
-            <label>Fecha de Nacimiento</label>
-            <input ng-model="book.dob" type="date" class="form-control" placeholder="DD/MM/AAAA">
-        </div>
-        <div class="form-group">
-            <label>Peso (kg)</label>
-            <input ng-model="book.weight" type="text" class="form-control" placeholder="Peso">
-        </div>
+                <div class="form-group" style="display: inline-block;">
+                    <label>Apellido *</label>
+                    <input ng-model="book.lastname" type="text" class="form-control" placeholder="Apellido" required>
+                </div>
 
-        <div class="form-group"">
-            <label>Deposito</label>
-            <input style="background-color: #2aab24; color: #ffffff; text-align: center" ng-model="book.deposit" type="text" class="form-control" placeholder="" disabled>
-        </div>
+                <div class="form-group" style="display: inline-block;">
+                    <label>DNI *</label>
+                    <input ng-model="book.dni" type="text" class="form-control" placeholder="DNI" required ng-required="first">
+                </div>
 
-        <div class="form-group">
-            <label>Saldo</label>
-            <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="book.pending" type="text" class="form-control" placeholder="" disabled>
-        </div>
+                <div class="form-group" style="display: inline-block;">
+                    <label>e-mail</label>
+                    <input ng-model="book.email" type="email" class="form-control" placeholder="email" ng-required="first">
+                </div>
 
-        <div class="modal-footer">
-            <button class="btn btn-primary" type="button" ng-disabled="bookingForm.$invalid" ng-click="saveBook()">Guardar</button>
-            <button class="btn btn-warning" type="button" ng-click="cancel();">Cancelar</button>
-        </div>
-    </form>
+                <div class="form-group" style="display: inline-block;">
+                    <label>Telefono</label>
+                    <input ng-model="book.phone" type="text" class="form-control" placeholder="Telefono" ng-required="first">
+                </div>
+                <div class="form-group" style="display: inline-block;">
+                    <label>Fecha de Nacimiento</label>
+                    <input ng-model="book.dob" type="date" ng-model-options="{timezone:'UTC'}" class="form-control" placeholder="DD/MM/AAAA">
+                </div>
+                <div class="form-group" style="display: inline-block;">
+                    <label>Peso (kg)</label>
+                    <input ng-model="book.weight" type="text" class="form-control" placeholder="Peso">
+                </div>
+
+                <!--<div style="display: block"></div>-->
+
+                <div class="form-group" style="display: inline-block;">
+                    <label>Deposito</label>
+                    <input style="background-color: #2aab24; color: #ffffff; text-align: center" ng-model="book.vdeposit" type="text" class="form-control" placeholder="" disabled>
+                </div>
+
+                <div class="form-group" style="display: inline-block;">
+                    <label>Saldo</label>
+                    <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="book.pending" type="text" class="form-control" placeholder="" disabled>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" ng-disabled="bookingForm.$invalid" ng-click="saveBook()">Guardar</button>
+                    <button class="btn btn-warning" type="button" ng-click="cancel();">Cancelar</button>
+                </div>
+            </form>
+            </md-content>
+        </md-tab>
+
+
+        <md-tab label="Ingresar Pagos">
+            <md-content style="padding: 4px;">
+                <div style="display: block">
+                    <div class="form-group" style="display: inline-block;">
+                        <label>Deposito</label>
+                        <input style="background-color: #2aab24; color: #ffffff; text-align: center" ng-model="book.vdeposit" type="text" class="form-control" placeholder="" disabled>
+                    </div>
+
+                    <div class="form-group" style="display: inline-block;">
+                        <label>Saldo</label>
+                        <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="book.pending" type="text" class="form-control" placeholder="" disabled>
+                    </div>
+                </div>
+
+                <input style="display: inline-block; text-align:right; width: 100px;" ng-model="cash" type="number" value="" class="form-control" placeholder="0" required>
+                <button style="display: inline-block" class="btn btn-sucess" type="button" ng-click="getCash()">Pagar efectivo</button>
+
+                <button class="btn btn-alert" style="float: right;" type="button"  ng-click="payMP()">Pagar con TJ</button>
+
+                <div class="table-responsive" style="padding-top: 20px;">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">Pagos realizados</div>
+                        <div class="panel-body">
+                            <table id="booktable" name="booktable" class="table table-striped" style="font-size: small;">
+                                <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Accion</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr ng-repeat="pays in showpayments">
+                                    <td>{{pays.payment_date}}</td>
+                                    <td>{{pays.type}}</td>
+                                    <td>{{pays.amount}}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-danger" ng-click="deletePayment(pays);">Remover</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+            </md-content>
+        </md-tab>
+        </md-tabs>
+    </md-content>
+
 </div>
-
-

@@ -26,7 +26,7 @@ if (isset($_SESSION['username'])) {
 
     $studentid = $request->id;
 
-    $date = date("Y-m-d");
+    $date = $request->bookdate;
 
     $rawSQL = "SELECT loads.loadid, loads.loadnumber, (loadslotavailable - COUNT(loads_skydivers.loadid)) as slotavailable FROM loads, loads_skydivers
            WHERE loads.loadid = loads_skydivers.loadid

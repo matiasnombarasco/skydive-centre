@@ -6,6 +6,7 @@
  * Time: 6:15 p.m.
  */
 
+session_start();
 include 'config.php';
 
 $conn = new mysqli($servername, $username, $password, $db);
@@ -35,7 +36,6 @@ if (!empty($result->num_rows) && $result->num_rows > 0) {
         'role' => $r['role']
     );
 
-    session_start();
     $_SESSION['username'] = $r['username'];
     $_SESSION['role'] = $r['role'];
 

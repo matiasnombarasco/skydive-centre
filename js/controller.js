@@ -5,8 +5,18 @@
 
 /* Controllers */
 
-tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', 'ManifestShowResource', '$interval', 'staffStatusResource', '$timeout',
-    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, ManifestShowResource, $interval, $staffStatusResource, $timeout) {
+tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', 'ManifestShowResource', '$interval', 'staffStatusResource', '$timeout', '$mdDialog', 'PaymentResource',
+    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, ManifestShowResource, $interval, $staffStatusResource, $timeout, $mdDialog, $PaymentResource) {
+
+        $scope.groupidview = false;
+
+
+        $scope.mpTest = function () {
+            $http.get('endpoints/mpsearch1.php')
+                .success(function (data) {
+                    $scope.mpayment = data;
+                });
+        };
 
         $http.get('endpoints/session.php')
             .success(function (data) {
@@ -24,6 +34,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
          */
 
         $scope.status = {opened: false}
+        $scope.orderByField = "['schtime','groupid']";
 
         $scope.alert = function () {
 
@@ -43,64 +54,81 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
 
         $scope.onUpdate = false;
 
-        ManifestShowResource.query().$promise.then(function (result) {
-            $scope.manifestLoads = result;
-        }, function (error) {
-            $scope.manifestLoads = [];
-
-        });
-
-        $scope.intervalManifestShow = false;
-        $scope.intervalManifest = false;
-
-        $interval(function () {
-            if (!$scope.intervalManifestShow) {
-                $scope.intervalManifestShow = true;
-                ManifestShowResource.query().$promise.then(function (result) {
+        $scope.refreshManifestInt = function() {
+            if (!($scope.dtdate === undefined)) {
+                var queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
+                ManifestShowResource.query({date: queryday}).$promise.then(function (result) {
                     $scope.manifestLoads = result;
-                    $scope.intervalManifestShow = false;
+                    $timeout(function(){
+                        $scope.refreshManifestInt();
+                    },3000)
                 }, function (error) {
                     console.log(error);
-                    $scope.intervalManifestShow = false;
+                    $timeout(function(){
+                        $scope.refreshManifestInt();
+                    },6000)
                 });
-
             }
-            // AutoUpdate Book list
+            else {
+                $timeout(function(){
+                    $scope.refreshManifestInt();
+                },6000)
+            }
+        }
 
-            if ((!$scope.onUpdate) && (!$scope.intervalManifest)) {
+        $scope.refreshManifestInt();
 
+        $scope.refreshReception = function(){
+
+            if ((!$scope.onUpdate) && !($scope.dtdate === undefined)) {
                 var queryday = '';
                 if ($scope.biggerthandatelocal) {
                     queryday = '>'
-                };
+                }
+                ;
 
                 if ($scope.limboon) {
                     queryday = 'LIMBO'
-                };
+                }
+                ;
 
                 if ($scope.manifestedon) {
                     queryday = 'MANIFESTED';
-                };
-
+                }
+                ;
 
                 queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
                 if (!(queryday == "undefined")) {
-                    $scope.intervalManifest = true;
                     BookResource.query({date: queryday}).$promise.then(function (result) {
                         if (!$scope.onUpdate) {
-                            $scope.Books = result;
-                        }
-                        $scope.intervalManifest = false;
+                            if (result.length > 0) {
+                                $scope.lastgroupid = result[0].groupid;
+                                $scope.Books = result;
+                            }
+                        };
+                        $timeout(function(){
+                            $scope.refreshReception();
+                        },10000)
                     }, function (error) {
                         if (!$scope.onUpdate) {
                             $scope.Books = [];
-                        }
-                        $scope.intervalManifest = false;
+                        };
+                        $timeout(function(){
+                            $scope.refreshReception();
+                        },6000)
                     });
                 }
             }
+            else {
+                $timeout(function(){
+                    $scope.refreshReception();
+                },6000)
+            }
 
-        }, 3000);
+
+        };
+
+        $scope.refreshReception();
 
         $scope.logoff = function () {
             localStorage.clear();
@@ -146,7 +174,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
 
         $http.get('endpoints/date.php', {cache: 'true'})
             .success(function (data) {
-                $scope.date = data;
+                $scope.date = data[0].date;
                 $scope.date = $scope.date.replace("-", "/").replace("-", "/")
                 $scope.toggleDates();
             });
@@ -161,8 +189,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             $scope.varindex = $scope.Books.indexOf(book);
 
             var bookcopy = angular.copy(book);
-            //bookcopy.dob = new Date(book.dob + "T18:00:00");
-            bookcopy.dob = book.dob;
+            bookcopy.dob = new Date(book.dob);
 
             var modalInstance = $uibModal.open({
                 templateUrl: 'sendToManifest.html',
@@ -173,9 +200,10 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                     }
                 }
             }).result.then(function (item) {
-                    if (!angular.equals(bookcopy, item)) {
+                    if (!angular.equals(book, item)) {
                         $scope.onUpdate = true;
-                        $scope.Books[$scope.varindex] = item;
+                        item.dob = (item.dob, "yyyy/MM/dd");
+                        $scope.Books[$scope.Books.indexOf(book)] = item;
                         item.$save().then(function () {
                             $scope.onUpdate = false;
                         });
@@ -183,12 +211,12 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 });
         };
 
+
         $scope.sendToManifest = function (book) {
             $scope.varindex = $scope.Books.indexOf(book);
 
             var bookcopy = angular.copy(book);
-            //bookcopy.dob = new Date(book.dob + "T18:00:00");
-            bookcopy.dob = book.dob;
+            bookcopy.dob = new Date(book.dob);
 
             var modalInstance = $uibModal.open({
                 templateUrl: 'sendToManifest.html',
@@ -211,7 +239,8 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                         $scope.onUpdate = false;
                         if (data.error == 'error') {
                             $scope.alert();
-                        };
+                        }
+                        ;
                     });
 
                     /*
@@ -228,9 +257,36 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 });
         };
 
-        $scope.selectFila = function (row) {
+        $scope.selectFila = function (row, book) {
             $scope.selectedrow = row;
             $scope.indice = row;
+            $scope.selectedbook = book;
+        };
+
+
+        $scope.setGroupColor = function (book) {
+            if (this.$first) {
+                $scope.colorGroup = "ffcc66"
+            }
+            if (!(angular.isUndefined(book.color))) {
+                return {"background-color": book.color};
+            }
+            else {
+                if (book.groupid != $scope.lastgroupid) {
+                    $scope.lastgroupid = book.groupid;
+                    if ($scope.colorGroup === "ffcc66") {
+                        $scope.colorGroup = "ffff99";
+                    }
+                    else {
+                        $scope.colorGroup = "ffcc66";
+                    }
+                    ;
+                }
+                ;
+                book.color = $scope.colorGroup;
+                return {"background-color": $scope.colorGroup};
+            }
+            ;
         };
 
         $scope.showgroupid = function () {
@@ -291,12 +347,6 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
         $scope.Books = [];
         //$scope.Books = BookResource.query({makeid : $scope.groupid});
 
-
-        $scope.selectFila = function (row) {
-            $scope.selectedrow = row;
-            $scope.indice = row;
-        };
-
         $scope.payments = [{id: 1, name: 'Efectivo'}, {id: 2, name: 'Tarjeta de Credito'}];
 
         $scope.editTimePayment = function (book) {
@@ -304,9 +354,15 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             $scope.promise = BooksGroupsResource.query({groupid: book.groupid}).$promise.then(function (resultBooksGroups) {
                 if (resultBooksGroups.length > 0) {
                     $scope.bookgroup = resultBooksGroups[0];
-                    $scope.bookgroup.deposit = book.deposit;
-                }
-                ;
+                    /* Agragado para solucionar el tema del deposito por mano y el vdeposito*/
+                    if (book.vdeposit > 0) {
+                        $scope.bookgroup.deposit = 0;
+                    }
+                    $scope.bookgroup.cant = ($scope.Books.filter(function (book) {
+                        return book.groupid === $scope.bookgroup.groupid
+                    })).length;
+                };
+
                 var modalInstance = $uibModal.open({
                     templateUrl: 'timepaymentEdit.html',
                     controller: 'timepaymentEditCtrl',
@@ -315,33 +371,16 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                             return $scope.bookgroup;
                         }
                     }
-                }).result.then(function () {
-                        $scope.bookgroup.bookdate = $filter('date')($scope.bookgroup.bookdate, "yyyy/MM/dd");
-                        $scope.bookgroup.$save();
-                        book.deposit = $scope.bookgroup.deposit;
+                }).result.then(function (item) {
+                        if (item.bookdate != '0000-00-00') {
+                            item.bookdate = $filter('date')(item.bookdate, "yyyy/MM/dd");
+                        }
+                        item.$save();
+                        book.deposit = item.deposit;
                         var bookcopy = angular.copy(book);
                         $scope.onUpdate = true;
-                        $scope.Books[$scope.indice] = book;
                         bookcopy.$save().then(function () {
                             $scope.onUpdate = false;
-                        });
-
-
-                        /*
-                         .then(function() {
-                         $scope.updateBookList();
-                         });
-                         */
-
-                        $scope.Books.forEach(function (scopebook) {
-                            if (scopebook.groupid == book.groupid) {
-                                scopebook.schtime = $scope.bookgroup.schtime;
-                                scopebook.notes = $scope.bookgroup.notes;
-                                scopebook.pending = 1700 - $scope.bookgroup.deposit;
-                                if (!(angular.isUndefined($scope.bookgroup.bookdate))) {
-                                    scopebook.bookdate = $scope.bookgroup.bookdate.replace("/", "-").replace("/", "-");
-                                }
-                            }
                         });
 
 
@@ -378,10 +417,17 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 $scope.manifestedon = false;
             }
 
-            if (queryday == '') {queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"))};
+            queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
             $scope.promise = BookResource.query({date: queryday}).$promise.then(function (result) {
+                if (result.length != 0) {
+                    $scope.lastgroupid = result[0].groupid;
+                    $scope.selectFila(0);
+                }
+                else {
+                    $scope.Books = [];
+                }
                 $scope.Books = result;
-                $scope.selectFila(0);
+
             }, function (error) {
                 console.log(error);
                 $scope.Books = [];
@@ -435,7 +481,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
 
         // Available Instructors Select
 
-        $scope.editLoads = function(){
+        $scope.editLoads = function () {
             var modalInstance = $uibModal.open({
                 templateUrl: 'editLoad.html',
                 controller: 'loadEditCtrl',
@@ -448,14 +494,98 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
 
                 });
         }
+
+        $scope.refreshPays = function () {
+            var queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
+            $http.post("endpoints/getpayments.php?date='" + queryday + "'").success(function (data) {
+                $scope.pagos = data;
+
+                $scope.deposittotal = function () {
+                    var total = 0;
+                    for (var i = 0; i < $scope.pagos.length; i++) {
+                        total += parseInt($scope.pagos[i].deposit);
+                    }
+                    return total;
+                };
+
+                $scope.cashtotal = function () {
+                    var total = 0;
+                    for (var i = 0; i < $scope.pagos.length; i++) {
+                        total += parseInt($scope.pagos[i].cash);
+                    }
+                    return total;
+                };
+
+                $scope.transfer = 300;
+                $scope.otrosgastos = 0;
+                $scope.avion = $scope.pagos.length * 800;
+
+
+
+            });
+        };
+
+
+        $scope.startClock = function (starttime) {
+            countdown(starttime.getHours(), starttime.getMinutes())
+        };
+
+        function countdown(minutes, seconds) {
+            var endTime, hours, mins, msLeft, time;
+
+            function twoDigits(n) {
+                return (n <= 9 ? "0" + n : n);
+            }
+
+            $scope.updateTimer = '';
+            $scope.updateTimer = function () {
+                msLeft = endTime - (+new Date);
+                if (msLeft < 1000) {
+                    $scope.countdowntimer = "A SALTAR!!";
+                    var audio = document.getElementById("audio1");
+                    var audio2 = document.getElementById("audio2");
+                    audio.play();
+                    $timeout(function(){audio.play();}, 1000);
+                    $timeout(function(){audio2.play();}, 2000);
+
+                } else {
+                    time = new Date(msLeft);
+                    hours = time.getUTCHours();
+                    mins = time.getUTCMinutes();
+                    $scope.countdowntimer = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+
+                    $timeout(function () {
+                        $scope.updateTimer();
+                    }, 1000);
+                    //setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+                }
+            }
+
+            endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+            $scope.updateTimer();
+        }
+
+        $scope.smtpAlert = function(item) {
+            alert('se envio alerta');
+            $http.post('endpoints/emailalerts.php?groupid=' + item.groupid, { cache: 'true'})
+                .success(function(result) {
+                    if (result.error == 'error') {
+                        $scope.alert('error');
+                    }})
+        }
+
     }
+
 ]);
 
-tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', '$timeout',
-    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, $timeout) {
+tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', '$timeout', '$mdDialog',
+    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, $timeout, $mdDialog) {
 
 
         'use strict';
+
+        $scope.TimeSlots = [];
+
         $scope.changeMode = function (mode) {
             $scope.mode = mode;
         };
@@ -539,21 +669,13 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
 
 
         $scope.$watch('dt', function () {
-            var querydate = ($filter('date')($scope.dt, "yyyy/MM/dd"));
-            var objdate = {date: querydate};
-            $http.post('endpoints/datesavailable.php', objdate)
-                .success(function (data)
-                {
-                    $scope.bookingTime = data;
-                    if (data.error == 'error') {
-                        $scope.alert();
-                    };
-                });
+                $scope.updateTimeSlots($scope.selectedTime);
             });
+
 
         $http.get('endpoints/date.php', { cache: 'true'})
             .success(function(data) {
-                $scope.date = data;
+                $scope.date = data[0].date;
                 $scope.date = $scope.date.replace("-","/").replace("-","/")
                 $scope.toggleDates();
             });
@@ -562,11 +684,12 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
         {
             $scope.selectedrow = row;
             $scope.indice = row;
+
         };
 
         $scope.showgroupid = function () {
             $scope.groupidview = true;
-        }
+        };
 
         function makeid()
         {
@@ -599,6 +722,9 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                     {
                         $scope.Books.push(item);
                     }
+                    if ($scope.bookedit) {
+                        $scope.updateTimeSlots('0');
+                    }
                 });
         };
 
@@ -614,6 +740,9 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                 }
 
                 //$scope.Books.splice(index, 1);
+                if ($scope.bookedit) {
+                    $scope.updateTimeSlots('0');
+                }
 
                 return false;
             }
@@ -632,9 +761,25 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                         $scope.invalidGroupID = true;
                     }
                     else {
+                        $scope.depositpayed = false;
+                            angular.forEach($scope.Books, function(value, key) {
+                                if (value.vdeposit > 0) {
+                                    $scope.depositpayed = true;
+                                }
+                            });
+
                         BooksGroupsResource.query({groupid: $scope.groupid}).$promise.then(function(resultBooksGroups) {
                             if (resultBooksGroups.length > 0) {
+                                $scope.selectedTime = resultBooksGroups[0].selectedTime;
                                 $scope.dt = resultBooksGroups[0].bookdate;
+                                var bookenddate = new Date(resultBooksGroups[0].bookdate + " 00:00:00");
+                                var nextday = new Date($scope.date);
+                                nextday.setDate(nextday.getDate() + 1);
+
+                                if (bookenddate <= nextday) {
+                                    $scope.dtdisabled = true;
+                                }
+                                //$scope.updateTimeSlots(resultBooksGroups[0].selectedTime);
                             }
                         });
                     }
@@ -644,6 +789,28 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
             else {
                 $scope.Books = [];
             };
+        };
+
+        $scope.updateTimeSlots = function(selectedTime) {
+            var obj = {};
+            var obj = new Object();
+            var fecha = $filter('date')($scope.dt, "yyyy/MM/dd");
+            var obj = { "date": fecha, "count":$scope.Books.length, "groupid":$scope.groupid, "length": $scope.Books.length};
+
+            $http.post('endpoints/slotsavailables.php', obj , { cache: 'true'})
+                .success(function(result) {
+                    if (result.error == 'error') {
+                        $scope.alert();
+                    }
+                    else {
+                        if (angular.isArray(result)) {
+                            result.push({ label:'00:00:00', value: '0'});
+                            $scope.TimeSlots = result;
+                            $scope.selectedTime = selectedTime;
+                        }
+
+                    }
+                });
         };
 
         // Select if new or edit
@@ -663,6 +830,7 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
             $scope.refreshGroup();
             $scope.status = {opened: false};
             $scope.bookedit = true;
+
 
         }
 
@@ -686,7 +854,8 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
 
             if (email && phone) {
 
-                if (!(localStorage.getItem('username') == null)) {
+                if (!(localStorage.getItem('username') == null) || $scope.bookedit)  {
+                    // Save DB
                     $scope.Books[0].groupid = $scope.groupid;
                     $scope.Books[0].bookdate = $filter('date')($scope.dt, "yyyy/MM/dd");
                     $scope.Books[0].bookedit = $scope.bookedit;
@@ -698,34 +867,48 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                         }
                     }
 
-                    switch (bookslength) {
-                        case 0:
+                    $scope.Books[0].bookslength = bookslength;
+                    $scope.Books[0].selectedTime = $scope.selectedTime;
 
-                        case 1:
-                            $scope.Books[0].paymenturl = 'http://mpago.la/UiG1';
-                            break;
-                        case 2:
-                            $scope.Books[0].paymenturl = 'http://mpago.la/foS9';
-                            break;
-                        case 3:
-                            $scope.Books[0].paymenturl = 'http://mpago.la/60D1';
-                            break;
-                        case 4:
-                            $scope.Books[0].paymenturl = 'http://mpago.la/HVT8';
-                            break;
-                        case 5:
-                            $scope.Books[0].paymenturl = 'http://mpago.la/G3FL';
-                            break;
-                        default:
-                            $scope.Books[0].paymenturl = 'http://mpago.la/1eVD';
-                    }
-                    //$http.post('endpoints/newBooking.php', $scope.Books);
                     $scope.promise = $http.post('endpoints/newBooking.php', $scope.Books).success(function (result) {
                         if (result.error == 'error') {
                             $scope.alert();
                         }
                         else {
-                            $location.path('booksucess/' + bookslength);
+                            if (angular.isUndefined(result[0].duplicated)) {
+                                //$location.path('booksucess/' + bookslength);
+                                if (!(bookslength === 0)) {
+                                    modalInstance = $uibModal.open({
+                                        templateUrl: 'mppayment.php?mpurl=' + result[0].mpurl  + '&booklength=' + bookslength,
+                                        controller: 'MPpaymentCtrl',
+                                        resolve: {
+                                            item: function () {
+                                            }
+                                        }
+                                    }).result.then(function (item) {
+
+                                        }, function () {
+                                            $location.path('/booksucess/' + $scope.groupid);
+                                        });
+                                }
+                                else {
+                                    $scope.bookupdated = true;
+                                }
+                            }
+                            else
+                            {
+
+                                $mdDialog.show(
+                                    $mdDialog.alert()
+                                        .parent(angular.element(document.querySelector('#popupContainer')))
+                                        .clickOutsideToClose(true)
+                                        .title('Reserva duplicada')
+                                        .textContent('Hemos encontrado una reserva bajo su nombre. Lo redirigiremos a la misma para su edicion.')
+                                        .ok('Entendido')
+                                );
+
+                                $location.path('/booksucess/' + result[0].duplicated);
+                            }
                         }
                     });
                 }
@@ -751,46 +934,48 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
                                 }
                             }
 
-                            switch (bookslength) {
-                                case 0:
+                            $scope.Books[0].bookslength = bookslength;
+                            $scope.Books[0].selectedTime = $scope.selectedTime;
 
-                                case 1:
-                                    $scope.Books[0].paymenturl = 'http://mpago.la/K0Na';
-                                    break;
-                                case 2:
-                                    $scope.Books[0].paymenturl = 'http://mpago.la/GdkH';
-                                    break;
-                                case 3:
-                                    $scope.Books[0].paymenturl = 'http://mpago.la/SEa2';
-                                    break;
-                                case 4:
-                                    $scope.Books[0].paymenturl = 'http://mpago.la/qlQr';
-                                    break;
-                                case 5:
-                                    $scope.Books[0].paymenturl = 'http://mpago.la/ayyS';
-                                    break;
-                                default:
-                                    $scope.Books[0].paymenturl = 'http://mpago.la/1eVD';
-                            }
-                            //$http.post('endpoints/newBooking.php', $scope.Books);
                             $scope.promise = $http.post('endpoints/newBooking.php', $scope.Books).success(function (result) {
                                 if (result.error == 'error') {
                                     $scope.alert();
                                 }
                                 else {
-                                    $location.path('booksucess/' + bookslength);
+                                    if (angular.isUndefined(result[0].duplicated)) {
+                                        //$location.path('booksucess/' + bookslength);
+                                        if (!(bookslength === 0)) {
+                                            modalInstance = $uibModal.open({
+                                                templateUrl: 'mppayment.php?mpurl=' + result[0].mpurl + '&booklength=' + bookslength,
+                                                controller: 'MPpaymentCtrl',
+                                                resolve: {
+                                                    item: function () {
+                                                    }
+                                                }
+                                            }).result.then(function (item) {
+
+                                                }, function () {
+                                                    $location.path('/booksucess/' + $scope.groupid);
+                                                });
+                                        }
+                                        else {
+                                            $scope.bookupdated = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        $location.path('/booksucess/' + result[0].duplicated);
+                                    }
                                 }
                             });
-
-                        });
-                }
+                        })
+                };
             }
-            else
-            {
+            else {
                 alert("Debe definir un email y telefono");
             };
 
-        };
+            };
 
 
         /////////////////////////////////////////
@@ -799,9 +984,9 @@ tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$fi
             if (!(localStorage.getItem('username') == null)) {
                 return (mode === 'day' && 0);
             }
-//            return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6 ) );
+            return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6 ) );
 //            return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6 || date.getDate() === 10 ) );
-            return ( mode === 'day' && !( (date.getDay() === 0 && !(date.getDate() === 23)) || date.getDay() === 6  ) );
+//            return ( mode === 'day' && !( (date.getDay() === 0 && !(date.getDate() === 23)) || date.getDay() === 6  ) );
         };
 
         $scope.toggleDates = function () {
@@ -897,6 +1082,20 @@ tandemApp.controller('termsCtrl', function ($scope, $modalInstance, item) {
 });
 
 
+tandemApp.controller('MPpaymentCtrl', function ($scope, $modalInstance, item) {
+
+    $scope.cancel = function () {
+        $modalInstance.dismiss('Close');
+    };
+
+    $scope.acceptMP = function() {
+        $modalInstance.close(item);
+    };
+
+});
+
+
+
 tandemApp.controller('QuickReceptionCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource',
     function($scope, BookResource, $uibModal, $filter, BooksGroupsResource) {
 
@@ -904,10 +1103,10 @@ tandemApp.controller('QuickReceptionCtrl', ['$scope', 'BookResource', '$uibModal
     }]);
 
 
-
-tandemApp.controller('timepaymentEditCtrl', function ($scope, $modalInstance, item) {
+tandemApp.controller('timepaymentEditCtrl', function ($scope, $http, $modalInstance, item) {
 
     $scope.bookgroup = item;
+    $scope.dt = item.bookdate;
 
     $scope.cancel = function () {
         $modalInstance.dismiss('Close');
@@ -954,23 +1153,132 @@ tandemApp.controller('timepaymentEditCtrl', function ($scope, $modalInstance, it
     // Date Picker End
     ////////////////////////////////////////
 
-    $scope.dt = $scope.bookgroup.bookdate;
+    $scope.updateTimeSlots = function(item) {
+        var obj = {};
+        var obj = new Object();
+        var obj = { "date":item.bookdate, "count":item.cant, "groupid":item.groupid, "admin":true};
+        $http.post('endpoints/slotsavailables.php', obj , { cache: 'true'})
+            .success(function(result) {
+                if (result.error == 'error') {
+                    $scope.alert ();
+                }
+                else {
+                    if (angular.isArray(result)) {
+                        result.push({label: '00:00:00', value: '0'});
+                        $scope.TimeSlots = result;
+                        $scope.bookgroup.schtime = item.selectedTime;
+                    }
+                }
+            });
+    };
+
+    $scope.updateTimeSlots(item);
+
 
 });
 
-tandemApp.controller('manifestEditCtrl', function ($scope, $modalInstance, item) {
+tandemApp.controller('manifestEditCtrl', function ($scope, $modalInstance, item, $http, $interval) {
 
     $scope.book = angular.copy(item);
+    $scope.cash = $scope.book.pending;
+
+    var obj = {};
+    var obj = new Object();
+    var obj = {"id": $scope.book.id};
+    $http.post('endpoints/paymentsresource.php', obj , { cache: 'true'}).success(function(data){
+        if (data.length != 0) {
+            $scope.showpayments = data;
+        }
+    });
+
+    $scope.cashinterval = true;
+    $scope.showpaymentsinterval = true;
+    $scope.onDeleteUpdate = false;
 
     $scope.cancel = function () {
+        $scope.cashinterval = false;
+        $scope.showpaymentsinterval = false;
         $modalInstance.dismiss('Close');
     };
 
     $scope.saveBook = function() {
+        $scope.cashinterval = false;
+        $scope.showpaymentsinterval = false;
         $modalInstance.close($scope.book);
     };
 
-});
+
+   $scope.getCash = function() {
+
+       var objcash = {};
+       var objcash = new Object();
+       var objcash = {"id": $scope.book.id, "type": "CASH", "net_received_amount": $scope.cash};
+       $http.post('endpoints/paymentsresource.php', objcash , { cache: 'true'});
+       $scope.mdselected="0";
+    };
+
+
+    $scope.payMP = function() {
+        var price = $scope.book.pending * 1.1;
+        var obj = {};
+        var obj = new Object();
+        var mpName =  $scope.book.firstname + ' ' + $scope.book.lastname;
+        var obj = {"bookid": $scope.book.id, "price": price, "mpName": mpName, "mpEmail": $scope.book.email, "mpDNI": $scope.book.dni};
+
+        var win = window.open()
+        $http.post('endpoints/creatempurl.php', obj).success(function(mpurl){
+            win.location = mpurl;
+        });
+        $scope.mdselected="0";
+
+    };
+
+    $scope.deletePayment = function (item) {
+        if (confirm('Desea eliminar el registro?')) {
+            var index = $scope.showpayments.indexOf(item);
+            var obj = {};
+            var obj = new Object();
+            var obj = {"id": item.id, "delete": "yes"};
+
+            // remove from database;
+            $scope.onDeleteUpdate = true;
+            $http.post('endpoints/paymentsresource.php', obj , { cache: 'true'}).success(function()
+            {
+                $scope.onDeleteUpdate = false;
+            });
+
+            $scope.showpayments.splice(index, 1);
+
+            return false;
+        }
+    }
+
+    var cashpromise = $interval(function () {
+            if (($scope.cashinterval) && (!$scope.onDeleteUpdate)) {
+                $scope.cashinterval = false;
+                $http.get('endpoints/bookings.php?where=id=' + $scope.book.id + "&id=0").success(function (data) {
+                    if (data.length != 0) {
+                        $scope.book.vdeposit = data[0].vdeposit;
+                        $scope.book.pending = data[0].pending;
+                    }
+                    $scope.cashinterval = true;
+            })}
+            if (($scope.showpaymentsinterval) && (!$scope.onDeleteUpdate)) {
+                $scope.showpaymentsinterval = false;
+                var obj = {};
+                var obj = new Object();
+                var obj = {"id": $scope.book.id};
+                $http.post('endpoints/paymentsresource.php', obj , { cache: 'true'}).success(function(data){
+                    if (data.length != 0) {
+                        $scope.showpayments = data;
+                    }
+                    $scope.showpaymentsinterval = true;
+                });
+            }
+            }
+    , 3000);
+
+    });
 
 
 tandemApp.controller('loadEditCtrl', function ($scope, $modalInstance, item, $http) {

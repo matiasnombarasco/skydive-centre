@@ -39,9 +39,11 @@
             if (isset($request->schtime)) {
                 $fieldupdate .= "schtime='" . $request->schtime . "',";
             }
+
             if (isset($request->deposit)) {
                 $fieldupdate .= "deposit = '" . $request->deposit . "',";
             }
+
             if (isset($request->notes)) {
                 $fieldupdate .= "notes='" . $request->notes . "',";
             }
@@ -50,10 +52,14 @@
                 $fieldupdate .= "date ='" . $request->bookdate . "',";
             }
 
+            if (isset($request->selectedTime)) {
+                $fieldupdate .= "booking_datetime_id = " . $request->selectedTime . ",";
+                //var_dump($request->selectedTime);
+            }
+
             $fieldupdate = rtrim($fieldupdate, ',');
 
             $rawSql = "UPDATE group_bookings SET " . $fieldupdate . " WHERE groupid='" . $groupid . "';";
-
             break;
         default:
             if (isset($_GET["groupid"])) {
@@ -75,6 +81,7 @@
                 'bookdate' => $r['date'],
                 'schtime' => isset($r['schtime']) ? $r['schtime'] : '',
                 'deposit' => isset($r['deposit']) ? $r['deposit'] : '0',
+                'selectedTime' => isset($r['booking_datetime_id']) ? $r['booking_datetime_id'] : '0',
                 'notes' => isset($r['notes']) ? $r['notes'] : ''
             );
 

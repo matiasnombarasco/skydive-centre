@@ -27,3 +27,8 @@ bookingService.factory('staffStatusResource', ['$resource',
     function($resource) {
         return $resource('endpoints/staffstatus/staff', { staff: '@staff' });
     }]);
+
+bookingService.factory('PaymentResource', ['$resource',
+    function($resource) {
+        return $resource('endpoints/payments/id', { id: '@id' });
+    }]);

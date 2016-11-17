@@ -26,9 +26,25 @@
 
         <!--<div style="display: inline-block;"><input type="checkbox" ng-model="sendtolimbo">Send to Limbo</input></div>-->
 
+        <!--
         <div class="form-group">
             <label>Hora Programada:</label>
             <input ng-model="bookgroup.schtime" type="text" class="form-control">
+        </div>
+        -->
+
+        <div class="form-group">
+            <label>Hora Programada:</label>
+            <select ng-model="bookgroup.selectedTime"
+                    ng-options="slottimes.value as slottimes.label for slottimes in TimeSlots">
+            </select>
+        </div>
+
+        <div ng-show="groupidview" style="display: block;">
+            <h3 style="float: left; padding-right: 5px;">Seleccionar el horario:</h3>
+            <h3 style="padding-top: 15px;">
+
+            </h3>
         </div>
 
         <div class="form-group">

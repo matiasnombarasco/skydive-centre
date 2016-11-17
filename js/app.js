@@ -5,7 +5,9 @@ var tandemApp = angular.module('tandemApp', [
     'bookingService',
     'ngAnimate',
     'ui.bootstrap',
-    'cgBusy'
+    'cgBusy',
+    'ngMaterial',
+    'ngMessages',
 ]);
 
 tandemApp.config(['$routeProvider',
@@ -18,8 +20,9 @@ tandemApp.config(['$routeProvider',
                 templateUrl: 'booking.html',
                 controller: 'BookingCtrl'
                 })
-            .when('/booksucess/:book', {
-                templateUrl: 'booksucess.html'
+            .when('/booksucess/:groupid', {
+                templateUrl: 'booking.html'
+                //templateUrl: 'endpoints/mppayment.php'
             })
             .when('/system', {
                 templateUrl: 'system.html',

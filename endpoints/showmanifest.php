@@ -12,7 +12,7 @@ if (isset($_SESSION['username'])) {
 
     include 'config.php';
 
-//$requestParts = explode(':', $_GET['id']);
+    //$requestParts = explode(':', $_GET['id']);
 
     $conn = new mysqli($servername, $username, $password, $db);
 
@@ -24,7 +24,10 @@ if (isset($_SESSION['username'])) {
     $request = json_decode($postdata, false);
 
 //$date = $request->date;
-    $date = date('Y-m-d');
+    if (isset($_GET["date"]))
+    {
+        $date = $_GET["date"];
+    }
 
     $rawSQL = "SELECT LoadsCustomers.loadnumber, LoadsCustomers.customerName, TIname, LoadsCustomers.date, LoadsCustomers.altitude
 FROM

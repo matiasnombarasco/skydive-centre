@@ -11,5 +11,4 @@ RewriteRule endpoints/booksgroups endpoints/booksgroups.php?groupid=$1 [QSA,NC,L
 RewriteRule endpoints/showmanifest endpoints/showmanifest.php [QSA,NC,L]
 RewriteRule endpoints/staffstatus endpoints/staffstatus.php [QSA,NC,L]
 
-
 </IfModule>
