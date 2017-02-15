@@ -1,0 +1,116 @@
+<div class="modal-body" cg-busy="{promise:promise,message:'Loading'}">
+
+<md-content>
+    <md-tabs md-dynamic-height md-border-bottom md-selected="mdselected">
+        <md-tab label="Detalles">
+            <md-content style="padding: 4px;">
+
+                <div style="display: block">
+
+                    <div class="form-group" style="display: inline-block;" ng-show="SkydiverHistory.Total >= 0">
+                        <label>Saldo</label>
+                        <input style="background-color: #2aab24; color: #ffffff; text-align: center" ng-model="SkydiverHistory.Total" type="text" class="form-control" placeholder="" disabled>
+                    </div>
+
+                    <div class="form-group" style="display: inline-block;" ng-show="SkydiverHistory.Total < 0">
+                        <label>Saldo</label>
+                        <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="SkydiverHistory.Total" type="text" class="form-control" placeholder="" disabled>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Transacciones {{selectedRowSkydiverObj.firstname}} {{selectedRowSkydiverObj.lastname}}</div>
+                    <div class="panel-body" style="overflow: auto; height: 400px;">
+                        <table id="skydiverhistorytable" name="skydiverhistorytable" class="table table-striped" style="font-size: small;">
+                            <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Load</th>
+                                <th>Descripcion</th>
+                                <th>Monto</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="SkydiverHist in SkydiverHistory.data">
+                                <td>{{SkydiverHist.payment_date}}</td>
+                                <td>{{SkydiverHist.loadnumber}}</td>
+                                <td>{{SkydiverHist.description}}</td>
+                                <td ng-show="SkydiverHist.amount >= 0" style="color: green; font-weight: bold;">{{SkydiverHist.amount}}</td>
+                                <td ng-show="SkydiverHist.amount < 0" style="color: #c12e2a;">{{SkydiverHist.amount}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" ng-click="SkydiverHistoryClose();">Cerrar</button>
+            </div>
+
+        <md-tab label="Ingresar Pagos" ng-if="!book.bookinsert">
+            <md-content style="padding: 4px;">
+                <div style="display: block">
+
+                    <div class="form-group" style="display: inline-block;" ng-show="SkydiverHistory.Total >= 0">
+                        <label>Saldo</label>
+                        <input style="background-color: #2aab24; color: #ffffff; text-align: center" ng-model="SkydiverHistory.Total" type="text" class="form-control" placeholder="" disabled>
+                    </div>
+
+                    <div class="form-group" style="display: inline-block;" ng-show="SkydiverHistory.Total < 0">
+                        <label>Saldo</label>
+                        <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="SkydiverHistory.Total" type="text" class="form-control" placeholder="" disabled>
+                    </div>
+
+                    <button class="btn btn-alert" style="float: right;" type="button"  ng-click="SkydiverHistoryRefresh()">Actualizar</button>
+                </div>
+
+                <input style="display: inline-block; text-align:right; width: 100px;" ng-model="SkydiverHistory.cash" ng-focus="SkydiverHistoryRefreshCashInput()" type="number" value="" class="form-control" placeholder="0" required>
+                <button style="display: inline-block" class="btn btn-sucess" type="button" ng-click="SkydiverHistoryGetCash()">Pagar efectivo</button>
+
+                <button class="btn btn-alert" style="float: right;" type="button" ng-click="SkydiverHistoryPayMP()">Pagar con TJ</button>
+                <input style="display: inline-block; text-align:right; width: 100px; float: right;" ng-model="SkydiverHistory.mpcash" type="number" value="" class="form-control" placeholder="0" disabled>
+
+
+                <div class="table-responsive" style="padding-top: 20px;">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">Pagos realizados</div>
+                        <div class="panel-body">
+                            <table id="booktable" name="booktable" class="table table-striped" style="font-size: small;">
+                                <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Accion</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr ng-repeat="SkydiverHistPay in SkydiverHistory.data | filter: SkydiverHistoryPAY">
+                                    <td>{{SkydiverHistPay.payment_date}}</td>
+                                    <td>{{SkydiverHistPay.type}}</td>
+                                    <td>{{SkydiverHistPay.amount}}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-danger" ng-click="SkydiverHistorydeletePayment(SkydiverHistPay);">Remover</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal hide fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-body">
+                    </div>
+                </div>
+
+            </md-content>
+        </md-tab>
+    </md-tabs>
+</md-content>
+
+</div>

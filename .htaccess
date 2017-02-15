@@ -6,9 +6,4 @@ RewriteCond %{REQUEST_FILENAME} !-f
 
 RewriteCond %{REQUEST_FILENAME} !-d
 
-RewriteRule endpoints/bookings endpoints/bookings.php?id=$1 [QSA,NC,L]
-RewriteRule endpoints/booksgroups endpoints/booksgroups.php?groupid=$1 [QSA,NC,L]
-RewriteRule endpoints/showmanifest endpoints/showmanifest.php [QSA,NC,L]
-RewriteRule endpoints/staffstatus endpoints/staffstatus.php [QSA,NC,L]
-
 </IfModule>

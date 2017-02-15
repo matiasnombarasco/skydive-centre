@@ -1,0 +1,24 @@
+<div class="modal-body">
+    <form name="MPForm" style="text-align: center;">
+        <div class="form-group">
+            <label>Para completar la compra debe realizar el pago de ${{MP_PayAmmount}}</label>
+            <label>Con tarjeta de credito en cuotas o Rapipago/PagoFacil (10% de recargo / 0% interes en cuotas segun banco)</label>
+            <label>O con trasnferencia bancaria a la cuenta</label>
+            <p>Sebastian Aresca. CUIL 20277481090</p>
+            <p>Banco de la Nacion Argentina. Caja de ahorro.</p>
+            <p>CBU 0110444230044499209879</p>
+            <label>En caso de realizar transferencia por favor enviar recibo de transferencia a info@paracaidismorosario.com indicando el codigo de reserva {{groupid}}</label>
+        </div>
+
+        <div style="display: inline-block; padding-bottom: 30px;"><input type="button" name="MP-Checkout" ng-click="acceptMP()" class="btn btn-primary" value="Pagar regalo AHORA"></div>
+        <div style="display: inline-block; padding-bottom: 30px;"><input type="button" name="MP-Checkout" ng-click="payAfter()" class="btn btn-warning" value="Pagar regalo luego"></div>
+
+        <img src="images/mediospagos.jpg">
+
+    </form>
+
+    <div class="modal hide fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-body">
+        </div>
+    </div>
+</div>

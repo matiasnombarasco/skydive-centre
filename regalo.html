@@ -1,0 +1,47 @@
+<div style="position: absolute; width: 100%; height: 100%; background: url('images/bookback.jpg') no-repeat center center fixed;-webkit-background-size: cover;-moz-background-size: cover;-o-background-size: cover;background-size: cover; text-align: center; color: #2f2f2f;">
+
+    <img alt="Paracaidismo Rosario" src="images/prbooking.png" style="padding-top: 20px; padding-bottom: 20px; display: block; width: auto;height: auto;max-height: 150px;margin-left: auto;margin-right: auto;max-width: 100%;border: 0;-ms-interpolation-mode: bicubic;">
+
+    <div class="modal-body"  cg-busy="{promise:promise,message:'Reservando'}">
+        <form name="GiftForm" ng-submit="saveGift()" style="background: url('images/navidad.jpg') no-repeat center top; background-size: contain ; height: auto; width: auto; position: absolute;">
+            <div style="margin-left: 300px; margin-right: 100px; margin-top: 29px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label style="color: white;">Nombre del agasajado*</label>
+                    <input ng-model="book.firstname" type="text" class="form-control" placeholder="Nombre" autofocus required>
+                </div>
+
+                <div class="form-group" >
+                    <label style="color: white;">Apellido del agasajado*</label>
+                    <input ng-model="book.lastname" type="text" class="form-control" placeholder="Apellido" required>
+                </div>
+
+                <!--
+                <div class="form-group" style="display: inline-block; width: 100px; ">
+                    <label style="color: white;">DNI del agasajado*</label>
+                    <input ng-model="book.dni" type="text" class="form-control" placeholder="DNI" required>
+                </div>
+                -->
+
+                <div class="form-group">
+                    <label style="color: white;">email <span style="color: yellow">(Ingrese SU email. Recibira un correo con informacion)</span></label>
+                    <input ng-model="book.email" type="email" class="form-control" placeholder="email" required>
+                </div>
+
+                <div class="form-inline">
+                    <label style="color: white;">Telefono movil <span style="color: yellow">(Ingrese SU telefono)</span></label>
+                    <div></div>
+                    <span style="color: white;">(0</span><input ng-model="book.areacode" type="text" class="form-control" style="width: 50px;" placeholder="" required><span style="color: white;">)</span>
+                    <span style="color: white;">15 -</span>
+                    <input ng-model="book.phonenumber" type="text" class="form-control" placeholder="" required>
+                </div>
+
+
+                <div class="modal-footer">
+                    <button class="img-rounded" style="background: url('images/regala.jpg'); width: 376px; height: 58px;">
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+</div>

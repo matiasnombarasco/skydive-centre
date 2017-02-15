@@ -6,13 +6,11 @@
  * Time: 11:51 a.m.
  */
 
-session_start();
-
-if (isset($_SESSION['username'])) {
+if (isset($_COOKIE["easymanifest"])) {
 
     include 'config.php';
 
-    //$requestParts = explode(':', $_GET['id']);
+    $rawSQL = '';
 
     $conn = new mysqli($servername, $username, $password, $db);
 
@@ -20,54 +18,84 @@ if (isset($_SESSION['username'])) {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $postdata = file_get_contents("php://input");
-    $request = json_decode($postdata, false);
+    $rows = [];
+    $rawSQL = '';
 
-//$date = $request->date;
-    if (isset($_GET["date"]))
+    if (isset($_GET["querydate"]))
     {
-        $date = $_GET["date"];
+        $querydate = $_GET["querydate"];
     }
 
-    $rawSQL = "SELECT LoadsCustomers.loadnumber, LoadsCustomers.customerName, TIname, LoadsCustomers.date, LoadsCustomers.altitude
-FROM
-(SELECT vloads.id, vloads.loadnumber, CONCAT_WS(' ', tandem_bookings.firstname, tandem_bookings.lastname ) AS customerName, vloads.date, vloads.altitude FROM
-(SELECT CustomerTI.id, loads.date, loads.loadnumber, CustomerTI.customer, CustomerTI.TI, loads.altitude FROM
-(SELECT TLtable.id, loadid, customer, TI FROM
-(SELECT skydiverid as TI, loads_skydivers.id as id, loadid FROM loads_skydivers WHERE LEFT(jumptype,2) = 'TI') AS TItable,
-(SELECT skydiverid as customer, loads_skydivers.id as id FROM loads_skydivers WHERE LEFT(jumptype,2) = 'TL') AS TLtable
-WHERE TItable.id = TLtable.id) AS CustomerTI, loads
-WHERE CustomerTI.loadid = loads.loadid) as vloads, tandem_bookings
-WHERE tandem_bookings.id = vloads.customer) AS LoadsCustomers
-,
-(SELECT vloads.id, vloads.loadnumber, CONCAT_WS(' - ',tandem_bookings.firstname,jumptype) as TIname,  vloads.date FROM
-(SELECT CustomerTI.id, loads.date, loads.loadnumber, CustomerTI.customer, CustomerTI.TI, CustomerTI.jumptype, loads.altitude FROM
-(SELECT TLtable.id, loadid, customer, TI, jumptype FROM
-(SELECT skydiverid as TI, loads_skydivers.id as id, loadid, jumptype FROM loads_skydivers WHERE LEFT(jumptype,2) = 'TI') AS TItable,
-(SELECT skydiverid as customer, loads_skydivers.id as id FROM loads_skydivers WHERE LEFT(jumptype,2) = 'TL') AS TLtable
-WHERE TItable.id = TLtable.id) AS CustomerTI, loads
-WHERE CustomerTI.loadid = loads.loadid) as vloads, tandem_bookings
-WHERE tandem_bookings.id = vloads.TI) AS LoadsTI
+    $rawSQL = "SELECT vloads.loadnumber,
+                      vloads.loadid,
+                      vloads.Rpriceslots as priceslots,
+                      vloads.Rprice as price,
+                      vloads.jumptypeid,
+                      vloads.description,
+                      vloads.jumptype,
+                      vloads.altitude,
+                      vloads.video,
+                      vloads.skydiverid,
+                      (CONCAT(UCASE(LEFT(firstname, 1)),
+                      LCASE(SUBSTRING(firstname, 2)))) as skydiver,
+                      tandem_bookings.weight,
+                      vloads.instructor, vloads.autoid
+              FROM
+              (SELECT * FROM
+				  (SELECT loads.loadnumber,
+						  loads.loadid,
+						  loads_skydivers.autoid,
+						  loads_skydivers.skydiverid,
+						  loads_skydivers.jumptype as jumptypeid,
+						  loads_skydivers.instructor,
+						  loads_skydivers.grouporder,
+						  loads_skydivers.priceslots as Rpriceslots,
+						  loads_skydivers.price as Rprice
+					FROM loads
+					LEFT JOIN loads_skydivers ON loads.loadid = loads_skydivers.loadid
+					WHERE date = '$querydate'
+				  ) as vloads1
+              LEFT JOIN jumpstypereq ON vloads1.jumptypeid = jumpstypereq.id
+              ) as vloads
+              LEFT JOIN tandem_bookings
+              ON vloads.skydiverid = tandem_bookings.id
+              ORDER BY vloads.loadnumber, grouporder, autoid;
+              ";
 
-WHERE LoadsCustomers.id = LoadsTI.id AND LoadsCustomers.date = '$date' ORDER BY LoadsCustomers.loadnumber, LoadsCustomers.customerName";
-
+    mysqli_set_charset($conn, "utf8");
     $result = $conn->query($rawSQL);
     if (!empty($conn->error)) {
         die($conn->error);
     }
 
-    $rows[] = array();
     if (!empty($result->num_rows) && $result->num_rows > 0) {
         while ($r = mysqli_fetch_assoc($result)) {
             $rows[] = array(
                 'loadnumber' => $r['loadnumber'],
-                'customerName' => $r['customerName'],
-                'TIname' => $r['TIname'],
-                'altitude' => $r['altitude']
+                'skydiver' => $r['skydiver'],
+                'jumptypeid' => $r['jumptypeid'],
+                'jumptype' => $r['jumptype'],
+                'description' => $r['description'],
+                'altitude' => $r['altitude'],
+                'video' => $r['video'],
+                'loadid' => $r['loadid'],
+                'weight' => $r['weight'],
+                'skydiverid' => $r['skydiverid'],
+                'instructor' => $r['instructor'],
+                'autoid' => $r['autoid'],
+                'priceslots' => $r['priceslots'],
+                'price' => $r['price']
             );
         }
     }
-    print json_encode($rows);
+    else
+    {
+        $rows[] = '';
+    }
+
+    if (!isset($pusherquery)) {
+        print json_encode($rows, JSON_NUMERIC_CHECK);
+    }
 }
 
 ?>

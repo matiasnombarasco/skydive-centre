@@ -1,158 +1,167 @@
-<img alt="Paracaidismo Rosario" src="images/pr.png" style="
-    padding-top: 20px;
-    display: block;
-    width: auto;
-    height: auto;
-    max-height: 80px;
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 100%;
-    border: 0;
-    -ms-interpolation-mode: bicubic;
-">
+<link rel="stylesheet" href="css/booking.css">
+
+<div style="position: absolute; width: 100%; height: 100%; background: url('images/bookback.jpg') no-repeat center center fixed;-webkit-background-size: cover;-moz-background-size: cover;-o-background-size: cover;background-size: cover; text-align: center; color: #2f2f2f;">
+
+    <img alt="Paracaidismo Rosario" src="images/prbooking.png" style="padding-top: 20px; padding-bottom: 20px; display: block; width: auto;height: auto;max-height: 150px;margin-left: auto;margin-right: auto;max-width: 100%;border: 0;-ms-interpolation-mode: bicubic;">
+
+    <div ng-controller="BookingCtrl"  style="padding-top: 10px; display: inline-block; margin-left: auto; margin-right: auto; width: auto; background: white; -moz-box-shadow: 0 0 20px black; -webkit-box-shadow: 0 0 20px black; box-shadow: 0 0 20px black; opacity: 0.9;"  cg-busy="{promise:promise,message:'Reservando'}">
+
+        <div style="padding-left: 45px; padding-right: 45px; text-align: left;">
+
+            <span style="text-align: center">
+            <div ng-show="groupidview">
+                <div class="alert alert-danger alert-dismissible" role="alert" ng-show="!depositpayed">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <p><strong>Aun NO tenemos registro del pago de su reserva.</strong></p>
+                    <p>Si la realizo hace instantes por favor intente mas tarde. Le hemos enviado un correo con toda la informacion.</p>
+                </div>
+
+                <div class="alert alert-danger alert-dismissible" role="alert" ng-show="outofslots">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <p><strong>NO quedan lugares disponibles para esta fecha.</strong></p>
+                    <p>Puede elegir otra fecha de salto.</p>
+                </div>
+
+                <img style="display: block; margin-left: auto; margin-right: auto;"  ng-show="!depositpayed" ng-style="setPayColor()" src="http://booking.paracaidismorosario.com/images/pagar.png" alt="Paracaidismo Rosario" width="183" height="74" ng-click="saveBooking()">
+
+            </div>
+
+            <div ng-show="dtdisabled">
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <p><strong>IMPOSIBLE MODIFICAR LA RESERVA.</strong></p>
+                    <p>Solo es posible modificar la reserva 24hs previas a la fecha seleccionada.</p>
+                </div>
+            </div>
+
+            <style>
+                .btn[disabled] {
+                    opacity: 0.60;
+                    filter: alpha(opacity=90);
+                    background-color: #690000;
+                    color: #777;
+                }
+                .datepicker {
+                    background-color: #fff ;
+                    color: #333 ;
+                }
+            </style>
+
+            <div data-ng-show="showError" ng-class="{fade:doFade}" class="alert alert-danger"><strong>Error:</strong> {{errorMessage}}</div>
+            <div class="alert alert-success alert-dismissible" role="alert" ng-show="invalidGroupID">
+                <button type="button" ng-model="invalidGroupIDButton" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <p><strong>ID de grupo invalido</strong> Por favor ingrese un ID valido.</p>
+            </div>
 
 
-<hr/>
+            <div class="alert alert-success alert-dismissible" role="alert" ng-show="bookupdated">
+                <button type="button" ng-model="bookupdated" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <p><strong>Se ha actualizado la reserva</strong></p>
+            </div>
+            </span>
+
+            <div class="row">
+                <h4><p style="text-align: center;">Listo para saltar? Te damos la bienvenida a <strong style="color: black">Paracaidismo</strong><strong style="color: ef510b;"> Rosario</strong>.</p>
+                    <p style="text-align: center;">Estamos muy emocionados que nos hallas elegido para realizar tu primer salto bautismo.</p></h4>
+
+                <div style="float: left;">
+                    <div style="float: left; padding-right: 10px;"><h4>Elegi la fecha que quieras <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
+                    <div class="input-group" style="width: 135px;">
+                        <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="parent.dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false" readonly jm-dp-refresh-view="disableDatesLoaded">
+                        <span class="input-group-btn"><button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button></span>
+                    </div>
+                </div>
+
+                <div style="float:right;" class="col-xs-5 col-sm-3 col-md-3 col-lg-2">
+                    <input ng-show = "groupidviewDESHABILITADO" ng-disabled = "groupiddisabled" style="width: 80px; float: right; text-align: center; text-transform:uppercase;"
+                           ng-model="groupid"
+                           class="form-control"
+                           maxlength="5"
+                           uib-tooltip="Conserve este codigo de reserva para continuar luego."
+                           tooltip-placement="top"
+                           tooltip-trigger="mouseenter"
+                           tooltip-enable="true"
+                            >
+                    <!--Sacar el true || para que ande el unirte a un grupo
+                    <button style="float: right;" type="button" class="btn btn-warning fa fa-plus" ng-click="showgroupid()" ng-hide="true || groupidview">&nbsp;Unirte a un gurpo</button>-->
+
+                </div>
+
+                <div style="clear: both; padding-left: 5px; padding-top: 10px;">
+                    <button type="button" style="float: left; font-weight: bold;" class="btn btn-danger fa fa-plus" ng-click="open(Books.length)" ng-show="parent.dt">Agregar</button><h4 ng-show="parent.dt"> <span  style="padding-left: 10px;" class="glyphicon glyphicon-arrow-left"></span> Agrega los pariticipantes a la lista</h4>
+                </div>
 
 
-<div class="container disable-text-selection" ng-controller="BookingCtrl"  cg-busy="{promise:promise,message:'Reservando'}">
+            </div>
 
-    <div ng-show="groupidview">
-    <div class="alert alert-danger alert-dismissible" role="alert" ng-show="!depositpayed">
-        <button type="button" ng-model="bookupdated" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <strong>Aun NO tenemos registro del pago de su reserva.</strong> Si la realizo hace instantes por favor intente mas tarde. Le hemos enviado un correo con toda la informacion.
-    </div>
-    </div>
 
-    <div ng-show="dtdisabled">
-        <div class="alert alert-danger alert-dismissible" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <strong>IMPOSIBLE MODIFICAR LA RESERVA.</strong> Solo es posible modificar la reserva 24hs previas a la fecha seleccionada.
-        </div>
-    </div>
+            <!--
+            <div class="center">
+                <div style="display:inline-block; min-height:290px;">
+                    <uib-datepicker ng-model="dt" min-date="minDate" show-weeks="true" class="well well-sm" custom-class="getDayClass(date, mode)" date-disabled="disabled(date, mode)"></uib-datepicker>
+                </div>
+            </div>
+            -->
 
-    <style>
-        .btn[disabled] {
-            opacity: 0.60;
-            filter: alpha(opacity=90);
-            background-color: #690000;
-            color: #777;
-        }
-        .datepicker {
-            background-color: #fff ;
-            color: #333 ;
-        }
-    </style>
 
-    <div data-ng-show="showError" ng-class="{fade:doFade}" class="alert alert-danger"><strong>Error:</strong> {{errorMessage}}</div>
-    <div class="alert alert-success alert-dismissible" role="alert" ng-show="invalidGroupID">
-        <button type="button" ng-model="invalidGroupIDButton" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <strong>ID de grupo invalido</strong> Por favor ingrese un ID valido.
-    </div>
 
-    <div class="alert alert-success alert-dismissible" role="alert" ng-show="bookupdated">
-        <button type="button" ng-model="bookupdated" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <strong>Se ha actualizado la reserva</strong>
-    </div>
+            <div id="info"></div>
+            <br/>
+            <div id="viewdata"></div>
+            <div class="table-responsive"  ng-show="parent.dt || groupidview">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Reservas agregadas</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <!--<tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-ban fa-3x"></i>&nbsp;No data found</td></tr>-->
+                            <tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-cog fa-3x fa-spin"></i>&nbsp;Loading</td></tr>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Telefono</th>
+                                <th>email</th>
+                                <th>Accion</th>
+                            </tr>
 
-    <div class="row">
-        <!--<h4>Listo para saltar? Te damos la bienvenida a <strong>Paracaidismo Rosario</strong>. Estamos muy emocionados que nos hallas seleccionado para realizar tu primer salto bautismo.</h4>-->
+                            <style>
+                                .selected {
+                                    background-color: lightgreen !important;
+                                }
+                            </style>
 
-        <div style="float: left;">
-            <div style="float: left; padding-right: 10px;"><h4>Listo para saltar? Elegi la fecha que quieras <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
-            <div class="input-group" style="width: 135px;">
-                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" show-button-bar="false" show-weeks="false"  readonly>
-                <span class="input-group-btn"><button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button></span>
+                            <tr ng-repeat="book in Books | filter:{deleted:'!1'}"  ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                                <td>{{book.firstname}}</td>
+                                <td>{{book.lastname}}</td>
+                                <td>{{book.phone}}</td>
+                                <td>{{book.email}}</td>
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <!--<button type="button" class="btn btn-default fa fa-edit" ng-click="open(book);"></button>-->
+                                        <button type="button" class="btn btn-danger fa fa-trash-o" ng-click="bookdelete();"></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: block;" ng-show="groupidview && depositpayed">
+
+                <h3 style="float: left; padding-right: 5px;">Seleccionar el horario:</h3>
+                <h3 style="padding-top: 15px;">
+                    <select ng-model="selectedTime"
+                            ng-options="slottimes.value as slottimes.label for slottimes in TimeSlots">
+                    </select>
+                </h3>
+
+            </div>
+
+            <div style="float: right; padding-right: 35px; padding-bottom: 20px;">
+                <span ng-show="Books.length>0" style="float: left; padding-bottom: 5px; font-size: large;">Cuando esten todos en la lista clickea aqui <span style="padding-right: 10px;" class="glyphicon glyphicon-arrow-right"></span></span>
+                <div style="display: inline-block; padding-right: 5px;"><button style="float: right; font-weight: bold;" ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()" ng-disabled="continuedisabled || continuedisabledbydate">Continuar</button></div>
+                <button style="float: right; font-weight: bold;" ng-show="groupidview && Books.length>0" type="button" class="btn btn-warning fa" ng-click="refreshGroup()">Cancelar</button>
             </div>
         </div>
-
-        <div style="float:right;" class="col-xs-5 col-sm-3 col-md-3 col-lg-2">
-            <input ng-show = "groupidviewDESHABILITADO" ng-disabled = "groupiddisabled" style="width: 80px; float: right; text-align: center; text-transform:uppercase;"
-                   ng-model="groupid"
-                   class="form-control"
-                   maxlength="5"
-                   uib-tooltip="Conserve este codigo de reserva para continuar luego."
-                   tooltip-placement="top"
-                   tooltip-trigger="mouseenter"
-                   tooltip-enable="true"
-                    >
-            <!--Sacar el true || para que ande el unirte a un grupo
-            <button style="float: right;" type="button" class="btn btn-warning fa fa-plus" ng-click="showgroupid()" ng-hide="true || groupidview">&nbsp;Unirte a un gurpo</button>-->
-
-        </div>
-
-        <div style="clear: both; padding-left: 5px;">
-            <button type="button" style="float: left;" class="btn btn-danger fa fa-plus" ng-click="open(Books.length)" ng-show="dt">Agregar</button><h4 ng-show="dt" style="padding-top: 5px;"> <span  style="padding-left: 10px;" class="glyphicon glyphicon-arrow-left"></span> Agrega los pariticipantes a la lista</h4>
-        </div>
-
-
     </div>
-
-
-    <!--
-    <div class="center">
-        <div style="display:inline-block; min-height:290px;">
-            <uib-datepicker ng-model="dt" min-date="minDate" show-weeks="true" class="well well-sm" custom-class="getDayClass(date, mode)" date-disabled="disabled(date, mode)"></uib-datepicker>
-        </div>
-    </div>
-    -->
-
-
-
-    <div id="info"></div>
-    <br/>
-    <div id="viewdata"></div>
-    <div class="table-responsive"  ng-show="dt">
-        <div class="panel panel-primary">
-            <div class="panel-heading">Reservas agregadas</div>
-            <div class="panel-body">
-                <table class="table table-striped">
-                    <!--<tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-ban fa-3x"></i>&nbsp;No data found</td></tr>-->
-                    <tr ng-hide="Books.length>-1"><td style="vertical-align:middle;"><i class="fa fa-cog fa-3x fa-spin"></i>&nbsp;Loading</td></tr>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>Accion</th>
-                    </tr>
-
-                    <style>
-                        .selected {
-                            background-color: lightgreen !important;
-                        }
-                    </style>
-
-                    <tr ng-repeat="book in Books | filter:{deleted:'!true'}"  ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
-                        <td>{{book.firstname}}</td><td>{{book.lastname}}</td>
-                        <td style="width:100px">
-                            <div class="btn-group">
-                                <!--<button type="button" class="btn btn-default fa fa-edit" ng-click="open(book);"></button>-->
-                                <button type="button" class="btn btn-danger fa fa-trash-o" ng-click="bookdelete();"></button>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div style="display: block;" ng-show="groupidview">
-
-        <h3 style="float: left; padding-right: 5px;">Seleccionar el horario:</h3>
-        <h3 ng-show="depositpayed" style="padding-top: 15px;">
-            <select ng-model="selectedTime"
-                ng-options="slottimes.value as slottimes.label for slottimes in TimeSlots">
-            </select>
-        </h3>
-        <h5 style="color: red; padding-top: 15px;" ng-show="!depositpayed">
-            Aun no tenemos registro del pago de su reserva. Si la realizo hace instantes por favor intente mas tarde. Le hemos enviado un correo con toda la informacion
-        </h5>
-    </div>
-
-    <div style="float: right; padding-right: 35px;">
-        <h4 ng-show="Books.length>0" style="float: left; padding-bottom: 5px;">Cuando esten todos en la lista clickea aqui <span style="padding-right: 10px;" class="glyphicon glyphicon-arrow-right"></span></h4>
-        <button style="float: right; margin-left: 10px:" ng-show="groupidview && Books.length>0" type="button" class="btn btn-warning fa" ng-click="refreshGroup()">Cancelar</button>
-        <button style="float: right;" ng-show="Books.length>0" type="button" class="btn btn-success fa" ng-click="saveBooking()" ng-disabled="dtdisabled">Continuar</button>
-
-    </div>
-
 </div>

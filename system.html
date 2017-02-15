@@ -7,12 +7,9 @@
         padding: 10px;
     }
 
-    @media (min-width: 1200px) {
-        .container {
-            width: 100% !important;
-        }
+    .container {
+        width: 100% !important;
     }
-
 
 </style>
 
@@ -21,12 +18,18 @@
 <div data-ng-show="showError" ng-class="{fade:doFade}" class="alert alert-danger"><strong>Error:</strong> {{errorMessage}}</div>
 
 
+<div class="alert alert-danger alert-dismissible" style="position: absolute; left: 50%;  width: auto; height: auto;" role="alert" ng-show="!internet">
+    <strong>SIN conexion a internet</strong>
+</div>
+
+
 <uib-tabset>
 
 <uib-tab heading="Recepcion">
 
     <br>
-    <div class="container disable-text-selection">
+
+    <div class="container">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
                 Recepcion
@@ -43,7 +46,7 @@
         <div style="display: inline-block;">
             <div style="float: left; padding-right: 10px;"><h4>Fecha <span class="glyphicon glyphicon-arrow-right"></span></h4></div>
             <div class="input-group" style="width: 135px;">
-                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-change="updateBookList()" ng-model="dt" is-open="status.opened"  datepicker-options="dateOptions" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
+                <input class="datepicker" type="text" class="form-control" uib-datepicker-popup="dd/MM/yyyy" ng-change="updateBookList()" ng-model="parent.dt" is-open="status.opened"  datepicker-options="dateOptions" ng-required="true" show-button-bar="false" show-weeks="false" readonly>
                 <span class="input-group-btn">
                     <button type="button" class="btn btn-default" ng-click="opencalendar($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                 </span>
@@ -51,47 +54,51 @@
         </div>
 
 
-        <div style="display: inline-block;"><input type="checkbox" ng-model="biggerthandate" ng-change="updateBookList()">Todos los registro despues de la fecha</input></div>
-        <div style="display: inline-block;"><input type="checkbox" ng-model="limbo" ng-change="updateBookList()">Limbo</input></div>
-        <div style="display: inline-block;"><input type="checkbox" ng-model="manifested" ng-change="updateBookList()">Manifested</input></div>
-        <div style="display: inline-block;"><input type="checkbox" ng-model="exFields" ng-change="extendedFields = !extendedFields">Extended Fields</input></div>
-        <div style="display: inline-block;"><input type="checkbox" ng-model="altField" ng-change="alertsField = !alertsField">Alerts Fields</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="checkboxs.biggerthandate" ng-change="updateBookList()">Todos los registro despues de la fecha</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="checkboxs.limbo" ng-change="updateBookList()">Limbo</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="checkboxs.manifested" ng-change="">Manifested</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="checkboxs.exFields">Extended Fields</input></div>
+        <div style="display: inline-block;"><input type="checkbox" ng-model="checkboxs.altField" ng-disabled="checkboxs.manifested">Alerts Fields</input></div>
 
         <div class="table-responsive">
             <div class="panel panel-primary">
                 <div class="panel-heading">Reservas {{Books.length}}
-                    <div class="sw-search" >
+                    <div class="sw-search">
                         <div class="nav-search" id="nav-search">
-                            <!--
-                            Filtro:
-                            <span class="input-icon">
-                            <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtrobooktable" autocomplete="off" type="text" style="width:300px;" focus>
-                            <i class="search-icon fa fa-search nav-search-icon"></i>
-                            </span>
-                            -->
                             <div style="inline-block; float: right;">
+
                                 <td style="width:100px">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-warning" ng-click="editTimePayment(selectedbook);">Horario/Pago</button>
+                                        <button type="button" class="btn btn-info" ng-click="allToLimbo();" ng-disabled="checkboxs.manifested">LimboALL</button>
+                                    </div>
+                                </td>
+
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-danger" ng-click="bookInsert();" ng-disabled="checkboxs.manifested">Agregar</button>
+                                    </div>
+                                </td>
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-warning" ng-click="editTimePayment();" ng-disabled="checkboxs.manifested">Horario</button>
                                     </div>
                                 </td>
                                 <td style="width:80px">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-success" ng-click="editBooking(selectedbook);">Editar</button>
+                                        <button type="button" class="btn btn-success" ng-click="editBooking();">Editar</button>
                                     </div>
                                 </td>
                                 <td style="width:100px">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-primary" ng-click="sendToManifest(selectedbook);">Manifestar</button>
+                                        <button type="button" class="btn btn-primary" ng-click="sendToManifest();" ng-disabled="checkboxs.manifested">Manifestar</button>
                                     </div>
                                 </td>
                                 <td style="width:100px">
                                     <div class="btn-group">
-                                        <button type="button" class="btn btn-danger" ng-click="bookdelete(selectedbook);">Borrar</button>
+                                        <button type="button" class="btn btn-danger" ng-click="bookdelete();" ng-disabled="checkboxs.manifested">Borrar</button>
                                     </div>
                                 </td>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -101,61 +108,19 @@
                     <table id="booktable" name="booktable" class="table table-striped" style="font-size: small;">
                         <thead>
                         <tr>
-                            <th>
-                                <a href="" ng-click="orderByField='bookdate'; reverseSort = !reverseSort">
-                                    Fecha <span ng-show="orderByField == 'bookdate'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th>
-                                <a href="" ng-click="orderByField='schtime'; reverseSort = !reverseSort">
-                                    Horario <span ng-show="orderByField == 'schtime'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th>
-                                <a href="" ng-click="orderByField='groupid'; reverseSort = !reverseSort">
-                                    GroupID <span ng-show="orderByField == 'groupid'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th>
-                                <a href="" ng-click="orderByField='firstname'; reverseSort = !reverseSort">
-                                    Nombre <span ng-show="orderByField == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th>
-                                <a href="" ng-click="orderByField='lastname'; reverseSort = !reverseSort">
-                                    Apellido <span ng-show="orderByField == 'lastname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th>
-                                <a href="" ng-click="orderByField='phone'; reverseSort = !reverseSort">
-                                    Telefono <span ng-show="orderByField == 'phone'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th ng-show="extendedFields">
-                                <a href="" ng-click="orderByField='email'; reverseSort = !reverseSort">
-                                    Email <span ng-show="orderByField == 'email'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
-                            <th ng-show="extendedFields">DOB</th>
-
-                            <th ng-show="extendedFields">Peso</th>
-
-                            <th>
-                                <a href="" ng-click="orderByField='vdeposit'; reverseSort = !reverseSort">
-                                    Desposito <span ng-show="orderByField == 'vdeposit'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
-                                </a>
-                            </th>
-
+                            <th ng-show="checkboxs.exFields">Fecha</th>
+                            <th>Horario</th>
+                            <th>GroupID</th>
+                            <th>Nombre</th>
+                            <th>Telefono</th>
+                            <th ng-show="checkboxs.exFields"></th>
+                            <th ng-show="checkboxs.exFields">DOB</th>
+                            <th ng-show="checkboxs.exFields">Peso</th>
+                            <th>Pago</th>
                             <th>Saldo</th>
                             <th>Nota</th>
-                            <th ng-show="alertsField">Alerta</th>
+                            <th ng-show="checkboxs.exFields">F. Reserva</th>
+                            <th ng-show="checkboxs.altField">Alerta</th>
                         </tr>
                         </thead>
                         <style>
@@ -165,22 +130,22 @@
                         </style>
                         <tbody>
                         <!--<tr ng-repeat="book in Books | filter:filtrobooktable | orderBy:['schtime','groupid']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">-->
-                        <tr ng-repeat="book in Books | filter:filtrobooktable | orderBy:orderByField:reverseSort" ng-click="selectFila($index,book)" ng-class="{selected: $index==selectedrow}" ng-style="setGroupColor(book)">
+                        <tr ng-repeat="book in Books | filter: BooksFilter | orderBy:'schtime' track by book.id" ng-click="selectFila($index,book)" ng-class="{selected: $index==selectedrow}" ng-style="setGroupColor(book)">
 
-                            <td>{{book.bookdate}}</td>
+                            <td ng-show="checkboxs.exFields">{{book.bookdate}}</td>
                             <td>{{book.schtime}}</td>
                             <td><a target="_blank" href="https://www.mercadopago.com.ar/activities?q={{book.groupid}}">{{book.groupid}}</td>
-                            <td>{{book.firstname}}</td>
-                            <td>{{book.lastname}}</td>
-                            <td><a href="tel:{{book.phone}}">{{book.phone}}</a></td>
+                            <td>{{book.firstname}} {{book.lastname}}</td>
+                            <td><a href="tel:+{{book.phone}}">+{{book.phone}}</a></td>
                             <!--<td><a href="whatsapp://{{book.phone}}">{{book.phone}}</a></td>-->
-                            <td ng-show="extendedFields"><a target="_blank" href="https://www.mercadopago.com.ar/activities?q={{book.email}}">{{book.email}}</a></td>
-                            <td ng-show="extendedFields">{{book.dob}}</td>
-                            <td ng-show="extendedFields">{{book.weight}}</td>
+                            <td ng-show="checkboxs.exFields"><a target="_blank" href="https://www.mercadopago.com.ar/activities?q={{book.email}}">{{book.email}}</a></td>
+                            <td ng-show="checkboxs.exFields">{{book.dob}}</td>
+                            <td ng-show="checkboxs.exFields" ng-style="setWeightColor(book)">{{book.weight}}</td>
                             <td>{{book.vdeposit | currency}}</td>
-                            <td>{{book.pending | currency}}</td>
+                            <td>{{((book.pending > 0) ? book.pending : 0) | currency}}</td>
                             <td>{{book.notes}}</td>
-                            <td ng-show="alertsField"><button type="button" class="btn btn-danger" ng-click="smtpAlert(book)">Alertar</button></td>
+                            <td ng-show="checkboxs.exFields">{{book.booking_datetime}}</td>
+                            <td ng-show="checkboxs.altField"><button type="button" class="btn btn-danger" ng-click="smtpAlert(book)">Alertar</button></td>
                         </tr>
                         </tbody>
                     </table>
@@ -207,7 +172,7 @@
 <uib-tab heading="Manifiesto">
 
     <br>
-    <div class="container disable-text-selection">
+    <div class="disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
                 Manifiesto
@@ -223,21 +188,25 @@
 
             <p><button id="btn-export" ng-click="refreshManifest()">Refresh Manifest</button></p>
 
-            <table id="loadstable" name="loadstable" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
-                <tr>
-                    <th>Vuelo</th>
-                    <th>Alumno</th>
-                    <!--<th>TI</th>-->
-                    <th>Altura</th>
-                </tr>
-
-                <tr ng-repeat="load in manifestLoads | orderBy:['loadnumber']" ng-style="setLoadColor(load.loadnumber)">
-                    <td>{{load.loadnumber}}</td>
-                    <td>{{load.customerName}}</td>
-                    <!--<td>{{load.TIname}}</td>-->
-                    <td>{{load.altitude}}</td>
-                </tr>
-            </table>
+            <div class="form-group">
+                <div style="display: inline-block; font-size: x-large;">
+                    <div ng-repeat="(key,loadsvalues) in manifestLoads | groupBy:'loadnumber'" style="display: inline-block; font-size: large;">
+                        <div style="display: inline-block; width: 350px;">
+                            <div style="text-align: center; border-style: solid; border-width: 1px;" ng-style="setLoadColor(key)">{{key}}</div>
+                            <div>
+                                <table class="table" style="text-align: center; border-style: solid; border-width: 1px; font-size: large; font-weight: bold;">
+                                    <tr ng-repeat="load in loadsvalues" ng-style="setLoadColor(load.loadnumber)">
+                                        <div><td>{{load.skydiver}}</td></div>
+                                        <td>{{load.description}}</td>
+                                        <td>{{load.altitude}}</td>
+                                        <td>{{load.weight}}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -253,8 +222,7 @@
 
 <uib-tab heading="Statt Management">
 
-    <br>
-    <div class="container disable-text-selection">
+    <div class="container">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
                 Staff
@@ -266,12 +234,14 @@
             <div class="panel panel-primary">
                 <div class="panel-heading">Staff
                     <div class="sw-search">
+                        <!--
                         <div class="nav-search" id="nav-search">
                             Filtro: <span class="input-icon">
                             <input placeholder="Filter booking list ..." class="nav-search-input" ng-model="filtrostafftable" autocomplete="off" type="text" style="width:300px;" focus>
                             <i class="search-icon fa fa-search nav-search-icon"></i>
                         </span>
                         </div>
+                        -->
                     </div>
                 </div>
 
@@ -281,6 +251,8 @@
                         <tr>
                             <th>Nombre</th>
                             <th>Estado</th>
+                            <th>Llegada</th>
+                            <th>Salida</th>
                         </tr>
 
                         <style>
@@ -289,10 +261,16 @@
                             }
                         </style>
 
-                        <tr ng-repeat="staff in staffStatus | filter:filtrostafftable | orderBy:['loadnumber']" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}" ng-style="setLoadColor(load.loadnumber)">
-                            <td>{{staff.firstname}}</td>
+                        <tr ng-repeat="staff in manifestTIs" ng-click="selectFila($index)" ng-class="{selected: $index==selectedrow}">
+                            <td>{{staff.name}}</td>
                             <td>
-                                <input ng-model="staff.loggedin" type="checkbox" ng-checked="{{staff.loggedin}}" ng-click="updateStaffLoggedin(staff)" />
+                                <input ng-model="staff.loggedin" ng-value="staff.loggedin" type="number" ng-click="updateStaffLoggedin(staff)"/>
+                            </td>
+                            <td>
+                                <input ng-model="staff.InstJumpStart" ng-value="staff.InstJumpStart" type="number" ng-click="updateStaffLoggedin(staff)"/>
+                            </td>
+                            <td>
+                                <input ng-model="staff.InstJumpStop" ng-value="staff.InstJumpStop" type="number" ng-click="updateStaffLoggedin(staff)"/>
                             </td>
                         </tr>
                     </table>
@@ -305,10 +283,10 @@
 
 <!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
 
-<uib-tab heading="Manifiest Management">
+<uib-tab heading="Manifest Management">
 
     <br>
-    <div class="container disable-text-selection">
+    <div class="disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
                 Manifiesto
@@ -316,41 +294,196 @@
         </div>
         <br/>
 
-        <div class="panel-body" style="" cg-busy="{promise:promise,message:'Loading'}">
+        <div class="panel-body" cg-busy="{promise:promise,message:'Loading'}">
 
-            <p><button id="btn-export" ng-click="refreshManifest()">Refresh Manifest</button></p>
+            <!--<div style="padding-left: 70%; display: inline-block; position: fixed; width: auto; overflow-x: hidden; overflow-y: auto;">-->
+            <div style="display: inline-block;">
+                <p><button id="btn-export" ng-click="refreshManifest()">Refresh Manifest</button></p>
 
-            <div class="btn-group">
-                <button type="button" class="btn btn-success" ng-click="editLoads();">Editar</button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success" ng-click="editLoads();">Editar</button>
+                </div>
+
+                <button type="button" ng-click="createNewLoad()">Nuevo Vuelo</button>
+                <button type="button" ng-click="moveUpLocal()">Mover Arriba</button>
+                <button type="button" ng-click="moveDownLocal()">Mover abajo</button>
+                <button type="button" ng-click="manifestReorder()">Reorganizar</button>
             </div>
 
-
-            <table ng-hide="manifestLoads.length == 1" id="loadstable" name="loadstable" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
-                <tr>
-                    <th>Vuelo</th>
-                    <th>Alumno</th>
-                    <th>TI</th>
-                    <th>Altura</th>
-                    <th>Remover</th>
-                </tr>
-
-                <tr ng-repeat="load in manifestLoads | orderBy:['loadnumber']" ng-style="setLoadColor(load.loadnumber)">
-                    <td>{{load.loadnumber}}</td>
-                    <td>{{load.customerName}}</td>
-                    <td>{{load.TIname}}</td>
-                    <td>{{load.altitude}}</td>
-                    <td style="width:100px">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-danger" ng-click="removeJumperFromLoad(book);">Remover</button>
+            <div class="form-group" style="width: 80%; display: inline-block;">
+                <div style="display: inline-block; font-size: x-large;">
+                    <div ng-repeat="(key,loadsvalues) in manifestLoads | groupBy:'loadnumber'" ng-click="selectFilaManifestMgnt($index, loadsvalues)" style="display: inline-block; font-size: large;">
+                        <div style="display: inline-block; width: 400px;">
+                            <div style="text-align: center; border-style: solid; border-width: 1px;" ng-style="setLoadColor(key)" ng-class="{selected: $index==selectedrowManifestMgnt}">
+                                {{key}}
+                            </div>
+                            <div>
+                                <table class="table" style="text-align: center; border-style: solid; border-width: 1px; font-size: medium; font-weight: bold;">
+                                    <tr ng-repeat="load in loadsvalues" ng-style="setLoadColor(load.loadnumber)" ng-click="slotEditF(load)">
+                                        <div><td>{{load.skydiver}}</td></div>
+                                        <td>{{load.description}}</td>
+                                        <td>{{load.altitude}}</td>
+                                        <td style="width:100px">
+                                            <div class="btn-group" ng-show="NotCustomer(load)">
+                                                <button type="button" class="btn btn-danger" ng-click="removeJumperFromLoadLocal(load);">Remover</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
-                    </td>
+                    </div>
+                </div>
+            </div>
 
-                </tr>
-            </table>
+            <!-- Skydivers -->
+
+            <div class="table-responsive" style="float: right; display: inline-block; position: fixed; width: auto; height: 70%;">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Paracaidistas
+                        <div class="sw-search" >
+                            <div class="nav-search" id="nav-search">
+                                <div style="inline-block; float: right;">
+                                    <td style="width:150px">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-warning" ng-click="AddSkydiverToLoad(Skydivers[selectedskydiver])">Agregar</button>
+                                        </div>
+                                    </td>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-body" cg-busy="{promise:promise,message:'Loading'}">
+
+                        <table id="skydivertable" name="skydivertable" class="table table-striped" style="font-size: small;">
+                            <thead>
+                            <tr>
+                                <th">Nombre</th>
+                            </tr>
+                            </thead>
+                            <style>
+                                .selected {
+                                    background-color: lightgreen !important;
+                                }
+                            </style>
+                            <tbody>
+                            <tr ng-repeat="skydiver in Skydivers" ng-click="selectSkydiver($index)" ng-class="{selected: $index==selectedskydiver}">
+                                <td>{{skydiver.firstname}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- End skydivers -->
+
+
         </div>
     </div>
 
 </uib-tab>
+
+
+<uib-tab heading="Paracaidistas">
+
+    <br>
+    <div class="disable-text-selection">
+        <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
+            <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
+                Paracaidistas
+            </div>
+        </div>
+        <br/>
+
+
+        <div class="table-responsive" style="padding-left: 10%; padding-right: 10%;">
+            <div class="panel panel-primary">
+                <div class="panel-heading">Paracaidistas {{Skydivers.length}}
+                    <div class="sw-search">
+                        <div class="nav-search" id="nav-search">
+                            Filtro:
+                            <span class="input-icon" style="padding-right: 10px;">
+                            <input placeholder="Filter skydivers list ..." class="nav-search-input" ng-model="searchSkydiver" autocomplete="off" type="text" style="width:300px;" focus>
+                            <i class="search-icon fa fa-search nav-search-icon"></i>
+                            </span>
+
+                            <td style="width:80px">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-success" ng-click="SkydiversEditBooking();">Editar</button>
+                                </div>
+                            </td>
+
+                            <div style="inline-block; float: right;">
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-default" ng-click="LoadSkydivers()">Refresh</button>
+                                    </div>
+                                </td>
+
+                                <td style="width:100px">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-info" ng-click="skydiverHistory()">Cuentas</button>
+                                    </div>
+                                </td>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-body" cg-busy="{promise:promise,message:'Loading'}">
+
+                    <table id="booktable" name="skydivertable" class="table table-striped" style="font-size: small;">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>
+                                <a href="" ng-click="orderByField='firstname'; reverseSort = !reverseSort">
+                                    Nombre <span ng-show="orderByField == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
+                                </a>
+                            </th>
+
+                            <th>
+                                <a href="" ng-click="orderByField='lastname'; reverseSort = !reverseSort">
+                                    Apellido <span ng-show="orderByField == 'lastname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></span>
+                                </a>
+                            </th>
+
+                            <th>Telefono</th>
+                            <th>email</th>
+                            <th>saldo</th>
+                        </tr>
+                        </thead>
+                        <style>
+                            .selected {
+                                background-color: lightgreen !important;
+                            }
+                        </style>
+
+                        <tbody>
+                        <tr ng-repeat="skydiver in Skydivers | filter: searchSkydiver | orderBy:orderByField:reverseSort track by skydiver.id" ng-click="selectFilaSkydiver($index,skydiver)" ng-class="{selected: $index==selectedRowSkydiver}">
+                            <td>{{skydiver.id}}</td>
+                            <td>{{skydiver.firstname}}</td>
+                            <td>{{skydiver.lastname}}</td>
+                            <td>+{{skydiver.phone}}</td>
+                            <td>{{skydiver.email}}</td>
+                            <td ng-show="skydiver.total >= 0">{{skydiver.total | currency}}</td>
+                            <td ng-show="skydiver.total < 0" style="color: red; font-weight: bold;">{{skydiver.total | currency}}</td>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</uib-tab>
+
 
 <uib-tab heading="Pagos">
 
@@ -358,20 +491,21 @@
     <div class="container disable-text-selection">
         <div class="page-title" style="right: auto; left: 0px; top: 0px; height: 62px; margin: 0px; width: 257px; ">
             <div style="left: 0px; top: 0px; width: 237px; height: 42px; text-align: center;">
-                Manifiesto
+                Pagos
             </div>
         </div>
         <br/>
 
         <p><button id="btn-export" ng-click="refreshPays()">Refresh</button></p>
 
-        <table id="pagos" name="pagos" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%; float: left;">
+        <table id="pagos" name="pagos" class="table table-bordered" style="font-size: large; white-space: nowrap; width: 1%;">
 
             <tr>
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Efectivo</th>
                 <th>Mercado Pago</th>
+                <th>Otros</th>
                 <th>Control</th>
             </tr>
 
@@ -380,6 +514,7 @@
                 <td>{{pago.lastname}}</td>
                 <td style="text-align: right">${{pago.cash}}</td>
                 <td style="text-align: right">${{pago.deposit}}</td>
+                <td style="text-align: right">${{pago.other}}</td>
                 <td style="text-align: right;">${{pago.control}}</td>
             </tr>
             <tr>
@@ -390,7 +525,7 @@
             </tr>
         </table>
 
-        <table style="font-size: large; white-space: nowrap; width: 1%; float: left; text-align: center;" class="table table-bordered">
+        <table style="font-size: large; white-space: nowrap; width: 1%; text-align: center;" class="table table-bordered">
             <tr>
                 <table style="font-size: large; white-space: nowrap; width: 1%; text-align: center;" class="table table-bordered">
                 <tr>
@@ -416,7 +551,7 @@
                         <th>Gastos</th>
                     </tr>
                     <tr>
-                        <td><input ng-model="avion" style="width: 100px;"></td></td>
+                        <td><input ng-model="TandemSlotsTotal" style="width: 100px;">
                         <td><input ng-model="transfer" style="width: 50px;"></td>
                         <td>{{(pagos.length * 80)  | currency}}</td>
                         <td><input ng-model="otrosgastos" style="width: 50px;"></td>
@@ -427,7 +562,6 @@
         </table>
 
     </div>
-
 
 
 </uib-tab>

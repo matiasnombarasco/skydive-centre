@@ -1,7 +1,7 @@
 <?php
 
-error_reporting(0);
 include 'config.php';
+require('class.phpmailer.php');
 
 $conn = new mysqli($servername, $username, $password, $db);
 
@@ -17,14 +17,15 @@ $requestarray = json_decode($postdata, true);
 
 $groupid = array_values($requestarray)[0]['groupid'];
 $bookdate = array_values($requestarray)[0]['bookdate'];
-//$paymenturl = array_values($requestarray)[0]['paymenturl'];
 $bookslength = array_values($requestarray)[0]['bookslength'];
 $bookedit = array_values($requestarray)[0]['bookedit'];
-//$selectedTime = array_values($requestarray)[0]['selectedTime'];
 $selectedTime = isset(array_values($requestarray)[0]['selectedTime']) ? array_values($requestarray)[0]['selectedTime'] : '0';
 $booktime = '';
+$notes = isset(array_values($requestarray)[0]['notes']) ? array_values($requestarray)[0]['notes'] : '';
 
-if (!$bookedit) {
+
+if (!$bookedit)
+{
     $dnisearch = '';
     foreach ($requestarray as $request) {
         if (isset($request['dni'])) {
@@ -121,7 +122,7 @@ foreach ($requestarray as $request) {
         $dob . ", " .
         $weight . ", '" .
         $groupid . "', " .
-        "0," . $deleted . ",'Y','N',0,'0','$dni'),";
+        "0," . $deleted . ",'Y','N',0,'0','$dni',1),";
 }
 
 $rawSQL = rtrim($rawSQL, ',') . " ON DUPLICATE KEY UPDATE deleted = VALUES(deleted);";
@@ -157,7 +158,7 @@ $rawSQL = "SELECT 	tandem_bookings.id,
                     tandem_bookings.DNI
 
             FROM tandem_bookings LEFT JOIN
-                 (SELECT id_booking, SUM(payments.amount) AS amount FROM payments GROUP BY id_booking) as vpayments
+                 (SELECT id_booking, SUM(payments.amount) AS amount FROM payments WHERE deleted != 1 GROUP BY id_booking) as vpayments
                     ON tandem_bookings.id = vpayments.id_booking
 
             WHERE tandem_bookings.deleted = 0 AND
@@ -178,43 +179,36 @@ $count = 0;
 $vdeposit = 0;
 
 while ($r = mysqli_fetch_assoc($result)) {
+
     $pasajeros .= '<tr><td style="font-weight:bold">' . $r['firstname'] . ', ' . $r['lastname'] . '</td><td style="padding:1px 4px 7px"><b>|</b></td><td>' . $r['email'] . '</td></tr>';
     if ($r['vdeposit'] >= $vdeposit) {
         $vdeposit = $r['vdeposit'];
     }
     if ($count == 0)
     {
-        // Check if GROUPID already exist;
-        $rawSQL = "SELECT * FROM group_bookings WHERE groupid = '" . $groupid . "';";
+        if ($selectedTime <> 0) {
 
-        $resultGROUP = $conn->query($rawSQL);
-        if (!empty($conn->error)) {
-            die($conn->error);
-        }
+            $rawSQLSLOT = "SELECT * FROM slots_booking_date WHERE slot_id = " . $selectedTime . ";";
 
-       if ((!empty($resultGROUP->num_rows) && $resultGROUP->num_rows > 0) OR $bookedit) {
+            $resultGROUP = $conn->query($rawSQLSLOT);
+            if (!empty($conn->error)) {die($conn->error);}
+
             $r = mysqli_fetch_assoc($resultGROUP);
-            $mpurl = $r['mpurl'];
-            $rows[] = array(
-                'mpurl' => $mpurl);
-
-            $rawSQL = "UPDATE group_bookings SET date='" . $bookdate . "', booking_datetime_id = $selectedTime WHERE groupid='" . $groupid . "';";
-
-            if ($selectedTime <> 0) {
-
-                $rawSQLSLOT = "SELECT * FROM slots_booking_date WHERE slot_id = " . $selectedTime . ";";
-
-                $resultGROUP = $conn->query($rawSQLSLOT);
-                if (!empty($conn->error)) {
-                    die($conn->error);
-                }
-
-                $r = mysqli_fetch_assoc($resultGROUP);
-                $booktime = $r['slot_time'];
-            }
+            $booktime = $r['slot_time'];
         }
-        else
-        {
+
+        $rawSQL = "INSERT INTO group_bookings (groupid, date, booking_datetime, booking_datetime_id)
+                        VALUES ('" . $groupid . "','" . $bookdate . "',' " . date("Y-m-d H:i:s") . " ', $selectedTime)
+                        ON DUPLICATE KEY UPDATE
+                            date = VALUES(date),
+                            booking_datetime_id = VALUES(booking_datetime_id);";
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Generate MP link
+
+        if ($bookslength > 0) {
+
             date_default_timezone_set('America/Buenos_Aires');
 
             $mpName = $r['firstname'] . ' ' . $r['lastname'];
@@ -223,14 +217,27 @@ while ($r = mysqli_fetch_assoc($result)) {
             $mpID = $r['id'];
             $mpGroupID = $r['groupid'];
 
-            $mpurl = createMPurl($bookslength, $groupid, $mpName, $mpEmail, $mpDNI, $mpID);
+            $bookprice = 300;
+            // VER lo de la fecha de regalo
+            if ($notes == 'GIFT') {
+                $bookprice = 1900 * 1.1;
+            }
 
-            $rows[] = array(
-                'mpurl' => $mpurl);
+            $mpurl = createMPurl($bookslength, $groupid, $mpName, $mpEmail, $mpDNI, $mpID, $bookprice);
+
+            $rows[] = array('mpurl' => $mpurl);
 
             print json_encode($rows);
 
-            $rawSQL = "INSERT INTO group_bookings (groupid, date, booking_datetime, mpurl) VALUES ('" . $groupid . "','" . $bookdate . "',' " . date("Y-m-d H:i:s") . " ','". $mpurl . "');";
+            // end mp link
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            $rawSQL = "INSERT INTO group_bookings (groupid, date, booking_datetime, mpurl, booking_datetime_id)
+                        VALUES ('" . $groupid . "','" . $bookdate . "',' " . date("Y-m-d H:i:s") . " ','". $mpurl . "', $selectedTime)
+                        ON DUPLICATE KEY UPDATE
+                            date = VALUES(date),
+                            booking_datetime_id = VALUES(booking_datetime_id),
+                            mpurl = VALUES(mpurl);";
         }
 
         $resultGROUP = $conn->query($rawSQL);
@@ -252,13 +259,16 @@ $result = $conn->query($rawSQL);
 
 while ($r = mysqli_fetch_assoc($result)) {
     if ($r['email'] != '') {
-        sendMail($r['email'], $count, $pasajeros, $groupid, $bookdate, $mpurl, $booktime, $vdeposit);
+        sendMail($r['email'], $count, $pasajeros, $groupid, $bookdate, $mpurl, $booktime, $vdeposit,$notes);
     }
 }
 
+$pusher_date = isset($bookdate) ? $bookdate : '';
+include('pusher.php');
+
 exit;
 
-function createMPurl($bookslength, $groupid, $mpName, $mpEmail, $mpDNI, $mpID)
+function createMPurl($bookslength, $groupid, $mpName, $mpEmail, $mpDNI, $mpID, $bookprice)
 {
 /////////////////////////////////////
 // Mercado Pago
@@ -284,7 +294,7 @@ function createMPurl($bookslength, $groupid, $mpName, $mpEmail, $mpDNI, $mpID)
                 "title" => "Paracaidismo Rosario - $groupid",
                 "quantity" => $mpbookslength,
                 "currency_id" => "ARS",
-                "unit_price" => 300,
+                "unit_price" => $bookprice,
                 "picture_url" => "http://booking.paracaidismorosario.com/images/Cartel2015-500.jpg"
             )
         ),
@@ -312,9 +322,9 @@ function createMPurl($bookslength, $groupid, $mpName, $mpEmail, $mpDNI, $mpID)
 
 }
 
-function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl, $booktime, $deposit)
+function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl, $booktime, $deposit, $notes)
     {
-        $price = $count * 1850;
+        $price = $count * 1900;
 
         if ($booktime != '') {
             $horario = '<span style="font-family:Arial,Helvetica,sans-serif,Tahoma;color:#006;font-size:18px;line-height:130%;font-weight:bold;padding:0 5px;" id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Horario: ' . $booktime . '</span>';
@@ -323,9 +333,14 @@ function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl, 
         }
         else {
             $horario = 'Estamos procesando el pago de su reserva. Le enviaremos un email cuando este procesada y podra elegir el horario';
-            $pagar = '<td><a target="_blank" href="' . $paymenturl . '"><img src="http://booking.paracaidismorosario.com/images/pagar.png" alt="Paracaidismo Rosario" width="183" height="74"></a></td>';
+            $pagar = '<td><a target="_blank" href="http://booking.paracaidismorosario.com/#/' . $groupid . '"><img src="http://booking.paracaidismorosario.com/images/pagar.png" alt="Paracaidismo Rosario" width="183" height="74"></a></td>';
             $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Gracias por elegirnos. Recuerde realizar el pago (unico) para confirmar la reserva.</span>';
             $subject = 'Reserva en Paracaidismo Rosario';
+            if ($notes == 'GIFT') {
+                $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Gracias por elegirnos. Hemos adjuntado una tarjeta de regalo.</span>';
+                $subject = 'Regalo en Paracaidismo Rosario';
+            }
+
         }
 
         $total = $price - $deposit;
@@ -658,7 +673,7 @@ inapropiada. Normalmente la actividad dura entre una y dos horas, pero le recome
 Con el fin de participar en cualquier actividad relacionada con paracaidismo, primero debe firmar y ejecutar un acuerdo de contrato legal que exime de ciertos DERECHOS antes de su
 participacion en cualquier actividad relacionada con paracaidismo. Usted debe tener al menos 18 anos o mas el dia en que usted realizara el salto. Debera presentar carnet de identidad
 legal al momento del check-in. Si usted esta realizando esta reserva en nombre de otras personas, queda entendido que las misma tienen en conocimiento todos los terminos establecidos
-en este docuemnto. PARACAIDISMO ROSARIO se encuentra solamente en el Aeroclub Victoria, Ruta 11 Km 111 - Victoria, Entre Rios.</p>
+en este docuemnto. PARACAIDISMO ROSARIO se encuentra solamente en el Aeroclub Victoria, Ruta 11 Km 105 - Victoria, Entre Rios.</p>
                                             </tbody>
                                         </table>
 
@@ -677,9 +692,7 @@ en este docuemnto. PARACAIDISMO ROSARIO se encuentra solamente en el Aeroclub Vi
 </div>
 </html>';
 
-
-        require('class.phpmailer.php');
-        include('class.smtp.php');
+        include_once('class.smtp.php');
 
         $mail = new PHPMailer();
 
@@ -694,6 +707,9 @@ en este docuemnto. PARACAIDISMO ROSARIO se encuentra solamente en el Aeroclub Vi
         $mail->Username = "info@paracaidismorosario.com";
         $mail->Password = "Paracaidismo1234";
         $mail->Port = "465";
+        if ($notes == 'GIFT') {
+            $mail->AddAttachment("../images/voucher.jpg");
+        };
 
         $mail->SetFrom('info@paracaidismorosario.com', 'Paracaidismo Rosario');
         $mail->Subject = $subject;

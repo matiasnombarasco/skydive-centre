@@ -10,7 +10,6 @@ require_once('mercadopago.php');
 
 $mp = new MP ("5179497693280373", "Q1Gk3Xg5qaUaN3lamxdncuC8pPPffyV4");
 
-
 $postdata = file_get_contents("php://input");
 $request = json_decode($postdata, false);
 

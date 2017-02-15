@@ -1,0 +1,41 @@
+<div class="modal-body">
+    <form name="slotEditForm">
+        <div class="form-group">
+            <label>{{slotEdit.slot.skydiver}}</label>
+        </div>
+
+        <input ng-model="slotEdit.slot.jumptypeid" type="text" class="form-control" ng-show="false" required>
+
+        <div class="form-group" style="display: inline-block;">
+            <label>Tipo de Salto</label>
+            <select ng-model="slotEdit.jumptype.jumptype" class="form-control" type="text"
+                    ng-options="jumptype.jumptype as jumptype.jumptype for jumptype in slotEdit.jumpstype"
+                    ng-click="slotEditJumptypeSelect(slotEdit.slot)">
+            </select>
+        </div>
+
+        <div class="form-group" style="display: inline-block;">
+            <label>Altura</label>
+            <select ng-model="slotEdit.jumptype.altitude" class="form-control" type="text"
+                    ng-options="altitude.altitude as altitude.altitude for altitude in slotEdit.altitudes"
+                    ng-click="slotEditJumptypeSelect(slotEdit.slot)">
+            </select>
+        </div>
+
+        <label style="display: block; background-color: cornflowerblue ;text-align: center; padding-top: 5px; padding-bottom: 5px;" ng-show="slotEdit.slot.Instructors">Instructores</label>
+
+        <div ng-repeat="req in slotEdit.slot.jumpTypeReqList" style="padding-top: 10px;">
+            <div class="form-group" ng-show="slotEdit.slot.Instructors" align="center">
+                <label style="display: inline-block; width: 100px; text-align: right; padding-right: 10px;">{{req.description}}</label>
+                <select ng-model="req.skydiverid" class="form-control" style="display: inline-block; width: 200px;"
+                        ng-options="manifestTI.id as manifestTI.name for manifestTI in manifestTIs | filter: slotEditisTIdisabled">
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-click="slotEditSave()" ng-disabled="slotEditForm.$invalid">Guardar</button>
+            <button class="btn btn-warning" type="button" ng-click="slotEditCancel();">Cancelar</button>
+        </div>
+    </form>
+</div>

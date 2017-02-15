@@ -2,13 +2,79 @@
 
 /* Directives */
 
-
 /* Controllers */
 
-tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', 'ManifestShowResource', '$interval', 'staffStatusResource', '$timeout', '$mdDialog', 'PaymentResource',
-    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, ManifestShowResource, $interval, $staffStatusResource, $timeout, $mdDialog, $PaymentResource) {
+tandemApp.controller('SystemCtrl', ['$rootScope', '$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', 'ManifestShowResource', '$interval', '$timeout', 'getLocalStorage', 'orderByFilter', '$pusher', 'getBookings', '$q',
+    function($rootScope, $scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, ManifestShowResource, $interval, $timeout, getLocalStorage, orderBy, $pusher, getBookings, $q) {
 
+        $rootScope.internet = true;
         $scope.groupidview = false;
+        $scope.manifestLoads = [];
+        $scope.parent = {dt:''};
+        $scope.checkboxs = {'biggerthandate': false, 'limbo': false, 'manifested':false, 'exFields': false, 'altField': false};
+        $scope.creator = makeid();
+        $rootScope.creator = $scope.creator
+
+        $scope.loads_skydivers_delete = [];
+        localStorage.removeItem("rBooks");
+        localStorage.removeItem("rManifest");
+        localStorage.removeItem("rPayments");
+        localStorage.removeItem("rSkydivers");
+        localStorage.removeItem("rBooksGroups");
+
+        $scope.syncDB = function ()
+        {
+            $timeout(function ()
+            {
+                if ($rootScope.internet == false)
+                {
+                    getLocalStorage.saveBooks($scope);
+                    getLocalStorage.saveSkydivers($scope);
+                    getLocalStorage.savePayments();
+                    getLocalStorage.saveBooksGroups();
+                    getLocalStorage.updateManifestLoads($scope);
+                };
+                $scope.syncDB();
+            },5000);
+        };
+
+        $scope.syncDB();
+        // Pusher
+        var username = localStorage.getItem("username");
+        if (username != null) {
+
+            Pusher.logToConsole = true;
+
+            $scope.pusher = new Pusher('1e138a11b344a3de1454', {
+                encrypted: true
+            });
+
+            $scope.channel = $scope.pusher.subscribe('paracaidismo');
+            $scope.channel.bind('main', function (data) {
+                if (data.date == $scope.dtdatefmt && data.creator != $scope.creator) {
+                    if (data.manifest) {
+                        $scope.refreshManifest();
+                        console.log('manifest push');
+                    }
+                    if (data.bookings) {
+                        $scope.updateBookList();
+                        console.log('booking push');
+                    }
+                }
+            });
+
+        }
+        ////////////////////////////////////////////////////////////////////////
+
+        //$http.get('endpoints/pusher.php', { cache: 'true'});
+
+        $http.get('endpoints/jumptypes.php', { cache: 'true'}).success(function(data){
+            getLocalStorage.updateJumpsTypeReq(data[0][0]);
+            getLocalStorage.updateJumpsType(data[0][1]);
+            getLocalStorage.updateAltitudes(data[0][2]);
+            getLocalStorage.updateVideosType(data[0][3]);
+        });
+
 
 
         $scope.mpTest = function () {
@@ -22,8 +88,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             .success(function (data) {
                 if (data.session == 'false') {
                     $location.path('login');
-                }
-                ;
+                };
             });
 
         /*
@@ -33,7 +98,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
          }
          */
 
-        $scope.status = {opened: false}
+        $scope.status = {opened: false};
         $scope.orderByField = "['schtime','groupid']";
 
         $scope.alert = function () {
@@ -51,106 +116,60 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             }, 2500);
         };
 
-
-        $scope.onUpdate = false;
-
-        $scope.refreshManifestInt = function() {
-            if (!($scope.dtdate === undefined)) {
-                var queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
-                ManifestShowResource.query({date: queryday}).$promise.then(function (result) {
-                    $scope.manifestLoads = result;
-                    $timeout(function(){
-                        $scope.refreshManifestInt();
-                    },3000)
-                }, function (error) {
-                    console.log(error);
-                    $timeout(function(){
-                        $scope.refreshManifestInt();
-                    },6000)
-                });
-            }
-            else {
-                $timeout(function(){
-                    $scope.refreshManifestInt();
-                },6000)
-            }
-        }
-
-        $scope.refreshManifestInt();
-
-        $scope.refreshReception = function(){
-
-            if ((!$scope.onUpdate) && !($scope.dtdate === undefined)) {
-                var queryday = '';
-                if ($scope.biggerthandatelocal) {
-                    queryday = '>'
-                }
-                ;
-
-                if ($scope.limboon) {
-                    queryday = 'LIMBO'
-                }
-                ;
-
-                if ($scope.manifestedon) {
-                    queryday = 'MANIFESTED';
-                }
-                ;
-
-                queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
-                if (!(queryday == "undefined")) {
-                    BookResource.query({date: queryday}).$promise.then(function (result) {
-                        if (!$scope.onUpdate) {
-                            if (result.length > 0) {
-                                $scope.lastgroupid = result[0].groupid;
-                                $scope.Books = result;
-                            }
-                        };
-                        $timeout(function(){
-                            $scope.refreshReception();
-                        },10000)
-                    }, function (error) {
-                        if (!$scope.onUpdate) {
-                            $scope.Books = [];
-                        };
-                        $timeout(function(){
-                            $scope.refreshReception();
-                        },6000)
-                    });
-                }
-            }
-            else {
-                $timeout(function(){
-                    $scope.refreshReception();
-                },6000)
-            }
-
-
-        };
-
-        $scope.refreshReception();
-
         $scope.logoff = function () {
             localStorage.clear();
             $http.post('endpoints/logoff.php')
             $location.path('login');
         };
 
-        $scope.staffStatus = $staffStatusResource.query();
+
+        $scope.TIavailables = function () {
+            var querydate = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
+            var obj = {'querydate' : querydate};
+
+            $http.post('endpoints/staffstatus.php', obj , { cache: 'true'})
+            .success(function (data) {
+                $scope.manifestTIs = data;
+            });
+        };
+
         $scope.updateStaffLoggedin = function (staff) {
-            var staffcopy = angular.copy(staff);
-            staffcopy.$save();
+            staff.start_jumps = 0;
+
+            // set start jumps
+            if ($scope.manifestLoads.length > 0)
+            {
+                var manifestTIsEnabledTemp = $scope.TItandemweight(staff.InstJumpStart + 1);
+
+                var TIorderByPeso = orderBy($.grep(manifestTIsEnabledTemp, function (TItemp) {
+                    return (TItemp.loggedin != 0 && TItemp.id != staff.id && TItemp.InstJumpStop == 0 && staff.InstJumpStart > TItemp.InstJumpStart);
+                }), '[-saltos,peso]');
+                if (TIorderByPeso.length > 0) {
+                    staff.start_jumps = TIorderByPeso[0].saltos;
+                }
+            }
+
+            console.log($scope.manifestTIs);
+
+            getLocalStorage.updateStaff($scope);
         };
 
 
         $scope.refreshManifest = function () {
-
-            //$scope.manifestLoads = ManifestShowResource.query();
-
-            $scope.promise =
-                ManifestShowResource.query().$promise.then(function (result) {
-                    $scope.manifestLoads = result;
+            return $q(function(resolve) {
+                var queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
+                ManifestShowResource.query({querydate: queryday}).$promise.then(function (result) {
+                    if (result[0] != "") {
+                        $scope.manifestLoads = result;
+                        resolve();
+                    }
+                    else {
+                        $scope.manifestLoads = [];
+                        resolve();
+                    };
                 });
+                $scope.LoadSkydivers();
+            });
         };
 
         $scope.setLoadColor = function (loadnumber) {
@@ -162,17 +181,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             }
         };
 
-
-        /*
-         $http.get('endpoints/dateenabled.php', { cache: 'true'})
-         .success(function(data) {
-         $scope.date = data;
-         $scope.date = $scope.date.replace("-","/").replace("-","/")
-         $scope.toggleDates();
-         });
-         */
-
-        $http.get('endpoints/date.php', {cache: 'true'})
+        $http.get('endpoints/date.php')
             .success(function (data) {
                 $scope.date = data[0].date;
                 $scope.date = $scope.date.replace("-", "/").replace("-", "/")
@@ -180,89 +189,273 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             });
 
         $scope.isManifestable = function () {
-            if ($scope.dt == $scope.date) {
+            if ($scope.parent.dt == $scope.date) {
                 return true;
             }
         };
 
-        $scope.editBooking = function (book) {
-            $scope.varindex = $scope.Books.indexOf(book);
+        $scope.editBooking = function () {
+
+            var book = $scope.selectedRowBook;
 
             var bookcopy = angular.copy(book);
-            bookcopy.dob = new Date(book.dob);
+            book.dob = new Date(book.dob);
+            $scope.action = 'edit';
 
-            var modalInstance = $uibModal.open({
+            $uibModal.open({
                 templateUrl: 'sendToManifest.html',
                 controller: 'manifestEditCtrl',
-                resolve: {
-                    item: function () {
-                        return bookcopy;
-                    }
-                }
+                scope: $scope,
+                resolve: {item: book}
             }).result.then(function (item) {
-                    if (!angular.equals(book, item)) {
-                        $scope.onUpdate = true;
-                        item.dob = (item.dob, "yyyy/MM/dd");
-                        $scope.Books[$scope.Books.indexOf(book)] = item;
-                        item.$save().then(function () {
-                            $scope.onUpdate = false;
-                        });
-                    }
-                });
-        };
-
-
-        $scope.sendToManifest = function (book) {
-            $scope.varindex = $scope.Books.indexOf(book);
-
-            var bookcopy = angular.copy(book);
-            bookcopy.dob = new Date(book.dob);
-
-            var modalInstance = $uibModal.open({
-                templateUrl: 'sendToManifest.html',
-                controller: 'manifestEditCtrl',
-                //windowClass: 'app-modal-sentToManifest',
-                resolve: {
-                    item: function () {
-                        return bookcopy;
-                    }
-                }
-            }).result.then(function (item) {
-                    if (!angular.equals(bookcopy, item)) {
-                        item.$save();
+                    delete $scope.action;
+                    if (angular.isDate(item.dob)) {
+                        item.dob.setMinutes(item.dob.getMinutes() + item.dob.getTimezoneOffset());
+                        item.dob = ($filter('date')(item.dob, "yyyy/MM/dd"));
                     }
 
-                    $scope.Books.splice($scope.varindex, 1);
-
-                    $scope.onUpdate = true;
-                    $http.post('endpoints/automanifest.php', item).success(function (data) {
-                        $scope.onUpdate = false;
-                        if (data.error == 'error') {
-                            $scope.alert();
-                        }
-                        ;
+                    // Search in manifest
+                    var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                        return loaddata.skydiverid == item.id;
                     });
 
-                    /*
-                     if (typeof(book) === "object") // update
-                     {
-                     var index = $scope.Books.indexOf(book);
-                     $scope.Books.splice(index, 1, item);
-                     }
-                     else // add new
-                     {
-                     $scope.Books.push(item);
-                     }
-                     */
+                    // If it's in manifest
+                    if (loadreg.length > 0) {
+                        var jumpstype = getLocalStorage.findJumpTypeReq(item.jumptypeid);
+                        loadreg[0].jumptypeid = item.jumptypeid;
+                        loadreg[0].altitude = item.altitude;
+                        loadreg[0].video = item.video;
+                        loadreg[0].priceslots = jumpstype.priceslots;
+                        loadreg[0].price = jumpstype.price;
+
+                        angular.forEach(item.jumpTypeReqList, function (reg) {
+
+                            var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                                return loaddata.instructor == item.id;
+                            });
+
+                            if (loadreg.length > 0) {
+                                loadreg[0].jumptypeid = reg.id;
+                                loadreg[0].altitude = reg.altitude;
+                                loadreg[0].video = reg.video
+                                loadreg[0].priceslots = reg.priceslots;
+                                loadreg[0].price = reg.price;
+                            }
+                        });
+
+                        getLocalStorage.updateManifestLoads($scope);
+                    }
+
+                    getLocalStorage.saveBooks($scope,item);
+
+                }, function (item) {
+                    delete $scope.action;
+                    //var index = $scope.Books.indexOf(book);
+                    //$scope.Books[index] = bookcopy;
                 });
+
         };
 
-        $scope.selectFila = function (row, book) {
-            $scope.selectedrow = row;
-            $scope.indice = row;
-            $scope.selectedbook = book;
+        $scope.updateManiestReg = function(item) {
+            angular.forEach($scope.manifestLoads, function (loadreg)
+            {
+
+            });
         };
 
+        $scope.sendToManifest = function (book) {
+
+            var book = $scope.selectedRowBook;
+
+            var bookcopy = angular.copy(book);
+            book.dob = new Date(book.dob);
+            $scope.action = 'manifest';
+
+            var modalInstance = $uibModal.open({
+                templateUrl: 'sendToManifest.html',
+                controller: 'manifestEditCtrl',
+                scope: $scope,
+                resolve: {item: function () {
+                    return book;
+                }}
+            }).result.then(function (item)
+                {
+                    delete $scope.action;
+                    if (angular.isDate(item.dob)) {
+                        item.dob.setMinutes(item.dob.getMinutes() + item.dob.getTimezoneOffset());
+                        item.dob = ($filter('date')(item.dob, "yyyy/MM/dd"));
+                    }
+                    if (!angular.equals(bookcopy, item))
+                    {
+                        getLocalStorage.saveBooks($scope, item);
+                    }
+
+                    if (item.pending > 0)
+                    {
+                        if (!confirm('Saldo pendiente, Desa continuar?')) {
+                            return;
+                        }
+                    };
+
+                    $scope.sendToManifestLocal(item);
+                    $scope.selectFila(-1,'');
+                }, function ()
+                    {
+                        delete $scope.action;
+                        //var index = $scope.Books.indexOf(book);
+                        //$scope.Books[index] = bookcopy;
+                    });
+        };
+
+        $scope.sendToManifestLocal = function (item) {
+
+            // Look for last load
+            var arrayLoads = orderBy($scope.loadsList($scope.manifestLoads), 'loadnumber', true);
+
+            var loaddate = ($filter('date')($scope.dtdate, "yyyyMMdd"));
+
+            if (arrayLoads.length > 0)
+            {
+                var load = arrayLoads[0];
+                var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                    return loaddata.loadnumber == load.loadnumber;
+                });
+
+                if ((4 - loadreg.length) < (item.jumpTypeReqList.length +1) ) {
+                    // Generate loadid
+                    var loadid = "" + loaddate + (load.loadnumber + 1);
+                    // Create loadreg
+                    load = {'loadnumber': (load.loadnumber +1), 'loadid': loadid};
+                };
+            }
+            else
+            {
+                var loadid = "" + loaddate + '1';
+                load = {'loadnumber': 1, 'loadid': loadid};
+            }
+
+            var jumpstype = getLocalStorage.findJumpTypeReq(item.jumptypeid);
+
+            var autoid = "" + load.loadid + item.id;
+            var newloadreg = {
+                'autoid': autoid,
+                'skydiverid': item.id,
+                'skydiver': item.firstname,
+                'weight': item.weight,
+                'altitude': item.altitude,
+                'jumptypeid': item.jumptypeid,
+                'jumptype':  item.jumptype,
+                'description':  jumpstype.description,
+                'instructor': 0,
+                'altitude': item.altitude,
+                'video': item.video,
+                'loadid': load.loadid,
+                'loadnumber': load.loadnumber,
+                'priceslots': jumpstype.priceslots,
+                'price' : jumpstype.price
+            };
+
+            // Send to Manifest
+            $scope.manifestLoads.push(newloadreg);
+
+            // Clear null reg for empty loads
+            var loadclean = $.grep($scope.manifestLoads, function (loaddata) {
+                return loaddata.skydiverid == null;
+            });
+
+            angular.forEach(loadclean, function (value) {
+                var index = $scope.manifestLoads.indexOf(value)
+                $scope.manifestLoads.splice(index,1);
+            });
+            /// end clean
+
+            angular.forEach(item.jumpTypeReqList, function(regJT) {
+                if (regJT.skydiverid === undefined) {
+
+                    var manifestTIsEnabled = $scope.TItandemweight(load.loadnumber);
+
+                    // Look for TI
+                    var TIs = orderBy($.grep(manifestTIsEnabled, function(TI)
+                        {
+                            var isInLoad = $.grep($scope.manifestLoads, function(loadreg){
+                                return (loadreg.loadid == load.loadid && loadreg.skydiverid == TI.id);
+                            });
+                            return (TI.loggedin != 0 && !(isInLoad.length) && TI.InstJumpStop == 0);
+
+                        }), '[saltos+Asc,loggedin+"Asc"]');
+                    regJT.skydiverid = TIs[0].id;
+                    regJT.name = TIs[0].name;
+                    regJT.weight = TIs[0].weight;
+                    regJT.TIlocked = false;
+                }
+                else
+                {
+                    var TI = $.grep($scope.manifestTIs, function (TI) {
+                        return (TI.id == reg.skydiverid);
+                    });
+                    regJT.name = TI[0].name;
+                    regJT.weight = TI[0].weight;
+                    regJT.TIlocked = true;
+                }
+
+                var jumpstype = getLocalStorage.findJumpTypeReq(regJT.id);
+
+                var autoid = "" + load.loadid + regJT.skydiverid;
+                var newloadreg = {
+                    'autoid': autoid,
+                    'skydiverid': regJT.skydiverid,
+                    'skydiver': regJT.name,
+                    'weight': regJT.weight,
+                    'altitude': regJT.altitude,
+                    'jumptypeid': regJT.id,
+                    'jumptype': regJT.jumptype,
+                    'description': regJT.description,
+                    'instructor': item.id,
+                    'altitude': regJT.altitude,
+                    'video': regJT.video,
+                    'loadid': load.loadid,
+                    'loadnumber': load.loadnumber,
+                    'priceslots': jumpstype.priceslots,
+                    'price' : jumpstype.price,
+                    'TIlocked' : regJT.TIlocked
+                };
+                // Send to Manifest
+                $scope.manifestLoads.push(newloadreg);
+            });
+
+            $scope.automanifestReOrderLocal(load.loadnumber);
+
+            // save manifest to db
+            getLocalStorage.updateManifestLoads($scope);
+
+        };
+
+        $scope.selectFila = function (index, book) {
+            $scope.selectedrow = index;
+            $scope.selectedRowBook = book;
+        };
+
+        $scope.selectFilaManifestMgnt = function(row, loadvalues) {
+            $scope.selectedrowManifestMgntObj = loadvalues;
+            $scope.selectedrowManifestMgnt = row;
+        };
+
+        $scope.selectFilaSkydiver = function (index, skydiver) {
+            $scope.selectedRowSkydiver = index;
+            $scope.selectedRowSkydiverObj = skydiver;
+        };
+
+        $scope.selectSkydiver = function (row) {
+            $scope.selectedskydiver = row;
+        };
+
+
+        $scope.setWeightColor = function(book) {
+            if (book.weight > 90)
+            {
+                return {"color": "red", "font-weight": "bold"};
+            }
+        };
 
         $scope.setGroupColor = function (book) {
             if (this.$first) {
@@ -308,11 +501,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
             var modalInstance = $uibModal.open({
                 templateUrl: 'bookingEdit.html',
                 controller: 'bookingEditCtrl',
-                resolve: {
-                    item: function () {
-                        return book;
-                    }
-                }
+                resolve: {item: book}
             }).result.then(function (item) {
                     if (typeof(book) === "object") // update
                     {
@@ -326,133 +515,193 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 });
         };
 
-        $scope.bookdelete = function (book) {
+        $scope.bookInsert = function () {
+
+            var mid = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+            $scope.action = 'edit';
+
+            for( var i=0; i < 5; i++ )
+                mid += possible.charAt(Math.floor(Math.random() * possible.length));
+
+            var book = {
+                'groupid' : mid,
+                'bookdate': $scope.dtdatefmt,
+                'id': 0,
+                'firstname' : '',
+                'lastname' : '',
+                'dni' : 0,
+                'email' : '',
+                'dob' : 0,
+                'phone' : '',
+                'weight' : 0,
+                'pending': 0,
+                'vdeposit': 0,
+                'jumptypeid': 1,
+                'bookinsert': true};
+
+            var modalInstance = $uibModal.open({
+                templateUrl: 'sendToManifest.html',
+                controller: 'manifestEditCtrl',
+                scope: $scope,
+                resolve: {item: book}
+            }).result.then(function (item) {
+                    delete $scope.action;
+                    if (angular.isDate(item.dob)) {
+                        item.dob.setMinutes(item.dob.getMinutes() + item.dob.getTimezoneOffset());
+                        item.dob = ($filter('date')(item.dob, "yyyy-MM-dd"));
+                    }
+
+                    item.creator = 'XXXXX';
+                    $http.post('/endpoints/newBookingSystem.php', item , { cache: 'true'});
+                });
+
+
+        };
+
+        $scope.bookdelete = function () {
+
+            var book = $scope.selectedRowBook;
+
             if (confirm('Desea eliminar el registro?')) {
                 var index = $scope.Books.indexOf(book);
 
-                // remove from database;
-                if (typeof book === "object" && book.id > 0) {
-                    $scope.onUpdate = true;
-                    book.$remove().then(function () {
-                        $scope.onUpdate = false;
-                    });
-                }
+                book.deleted = 1;
+                getLocalStorage.saveBooks($scope,  book);
 
-                $scope.Books.splice(index, 1);
-
+                $scope.lastgroupid = $scope.Books[0].groupid;
+                angular.forEach($scope.Books, function (value) {
+                    value.color = undefined;
+                });
+                $scope.$apply;
                 return false;
             }
         };
 
         $scope.Books = [];
-        //$scope.Books = BookResource.query({makeid : $scope.groupid});
 
         $scope.payments = [{id: 1, name: 'Efectivo'}, {id: 2, name: 'Tarjeta de Credito'}];
 
-        $scope.editTimePayment = function (book) {
+        $scope.editTimePayment = function () {
 
-            $scope.promise = BooksGroupsResource.query({groupid: book.groupid}).$promise.then(function (resultBooksGroups) {
+            var book = $scope.selectedRowBook;
+            /*
+            $scope.promise = BooksGroupsResource.query({groupid: book.groupid}).$promise.then(function (resultBooksGroups)
+            {
                 if (resultBooksGroups.length > 0) {
                     $scope.bookgroup = resultBooksGroups[0];
-                    /* Agragado para solucionar el tema del deposito por mano y el vdeposito*/
-                    if (book.vdeposit > 0) {
-                        $scope.bookgroup.deposit = 0;
-                    }
-                    $scope.bookgroup.cant = ($scope.Books.filter(function (book) {
-                        return book.groupid === $scope.bookgroup.groupid
-                    })).length;
-                };
+            */
 
-                var modalInstance = $uibModal.open({
-                    templateUrl: 'timepaymentEdit.html',
-                    controller: 'timepaymentEditCtrl',
-                    resolve: {
-                        item: function () {
-                            return $scope.bookgroup;
+            $scope.bookgroup = {groupid: book.groupid, bookdate: book.bookdate, notes: book.notes, selectedTime: book.selectedTime};
+
+            if ($scope.bookgroup.bookdate != '')
+            {
+                $scope.bookgroup.bookdate = new Date($scope.bookgroup.bookdate);
+                $scope.bookgroup.bookdate.setMinutes( $scope.bookgroup.bookdate.getMinutes() + $scope.bookgroup.bookdate.getTimezoneOffset());
+            }
+
+            var modalInstance = $uibModal.open({
+                templateUrl: 'timepaymentEdit.html',
+                controller: 'timepaymentEditCtrl',
+                scope: $scope,
+                resolve: {
+                    item: function () { return $scope.bookgroup;}
+                }
+            }).result.then(function (item)
+                {
+                    item.bookdate = $filter('date')(item.bookdate, "yyyy-MM-dd");
+                    angular.forEach($scope.Books, function(book) {
+                        if (book.groupid == item.groupid) {
+                            book.bookdate = item.bookdate;
+                            book.notes = item.notes;
+                            book.selectedTime = item.selectedTime;
+                            var ST = {label: '00:00:00'};
+                            if (item.selectedTime != 0) {
+                                ST = $.grep($scope.TimeSlotsAll, function (ts) {
+                                    return  ts.value == item.selectedTime;
+                                });
+                                ST = ST[0];
+                            }
+                            book.schtime = ST.label;
                         }
-                    }
-                }).result.then(function (item) {
-                        if (item.bookdate != '0000-00-00') {
-                            item.bookdate = $filter('date')(item.bookdate, "yyyy/MM/dd");
-                        }
-                        item.$save();
-                        book.deposit = item.deposit;
-                        var bookcopy = angular.copy(book);
-                        $scope.onUpdate = true;
-                        bookcopy.$save().then(function () {
-                            $scope.onUpdate = false;
-                        });
-
-
                     });
-            });
+                    getLocalStorage.saveBooksGroups(item);
+                });
+
+            //});
         };
 
-
         $scope.updateBookList = function () {
-            $scope.dtdate = this.dt;
-            var queryday = '';
-            if (this.biggerthandate) {
-                $scope.biggerthandatelocal = this.biggerthandate;
-                queryday = '>';
-                queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
-            }
-            else {
-                $scope.biggerthandatelocal = false;
+
+            $scope.dtdate = $scope.parent.dt;
+            $rootScope.dtdate = $scope.parent.dt;
+            $scope.dtdatefmt = ($filter('date')($scope.dtdate, "yyyy-MM-dd"));
+
+            $scope.querytype = '';
+
+            if ($scope.checkboxs.biggerthandate) {
+                $scope.querytype = 'AFTERDATE';
             }
 
-            if (this.limbo) {
-                $scope.limboon = true;
-                queryday = 'LIMBO';
-            }
-            else {
-                $scope.limboon = false;
+
+            if ($scope.checkboxs.limbo) {
+                $scope.querytype = 'LIMBO';
             }
 
-            if (this.manifested) {
-                $scope.manifestedon = true;
-                queryday = 'MANIFESTED';
-            }
-            else {
-                $scope.manifestedon = false;
-            }
+            var querydate = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
 
-            queryday += ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
-            $scope.promise = BookResource.query({date: queryday}).$promise.then(function (result) {
+            getLocalStorage.getSlotsAvailablesAll($scope);
+
+            $scope.promise = getBookings.getBoookResource(querydate, $scope.querytype).then(function (result) {
                 if (result.length != 0) {
                     $scope.lastgroupid = result[0].groupid;
-                    $scope.selectFila(0);
+                    $scope.Books = result;
+                    $scope.selectFila(-1,'');
                 }
                 else {
                     $scope.Books = [];
                 }
-                $scope.Books = result;
+                $scope.TIavailables();
+                $scope.refreshManifest();
 
             }, function (error) {
                 console.log(error);
                 $scope.Books = [];
-                return false;
             });
 
-
         };
+
+        $scope.BooksFilter = function (book) {
+            var bookadd = $.grep($scope.manifestLoads, function (item)
+            {
+                return book.id == item.skydiverid;
+            });
+
+            if ($scope.checkboxs.manifested == true) {
+                return (book.deleted != 1 && (bookadd.length));
+            }
+            else
+            {
+                if ($scope.checkboxs.biggerthandate == true) {
+                    return (book.deleted != 1 && !(bookadd.length));
+                }
+                else {
+                    if ($scope.checkboxs.limbo == true) {
+                        return (book.deleted != 1 && !(bookadd.length) && book.bookdate == '');
+                    }
+                    else {
+                        return (book.deleted != 1 && !(bookadd.length) && book.bookdate == $scope.dtdatefmt);
+                    }
+                }
+            }
+        };
+
 
         /////////////////////////////////////////
         // Date Picker
         $scope.disabled = function (date, mode) {
             return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6 ) );
-            /*
-             if ("6" in )
-             {
-             return true;
-             }
-             else
-             {
-             return true;
-             }
-             */
-
-
         };
 
         $scope.toggleDates = function () {
@@ -466,7 +715,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
         };
 
         $scope.setDate = function (year, month, day) {
-            $scope.dt = new Date(year, month, day);
+            $scope.parent.dt = new Date(year, month, day);
         };
 
         $scope.dateOptions = {
@@ -497,7 +746,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
 
         $scope.refreshPays = function () {
             var queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
-            $http.post("endpoints/getpayments.php?date='" + queryday + "'").success(function (data) {
+            $http.post("endpoints/getDailyPayments.php?date='" + queryday + "'").success(function (data) {
                 $scope.pagos = data;
 
                 $scope.deposittotal = function () {
@@ -520,8 +769,7 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                 $scope.otrosgastos = 0;
                 $scope.avion = $scope.pagos.length * 800;
 
-
-
+                $scope.getTandemSlotsTotal();
             });
         };
 
@@ -572,529 +820,920 @@ tandemApp.controller('SystemCtrl', ['$scope', 'BookResource', '$uibModal', '$fil
                     if (result.error == 'error') {
                         $scope.alert('error');
                     }})
-        }
-
-    }
-
-]);
-
-tandemApp.controller('BookingCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource', '$http', '$location', '$routeParams', '$timeout', '$mdDialog',
-    function($scope, BookResource, $uibModal, $filter, BooksGroupsResource, $http, $location, $routeParams, $timeout, $mdDialog) {
-
-
-        'use strict';
-
-        $scope.TimeSlots = [];
-
-        $scope.changeMode = function (mode) {
-            $scope.mode = mode;
         };
 
-        $scope.today = function () {
-            $scope.currentDate = new Date();
-        };
-
-        $scope.isToday = function () {
-            var today = new Date(),
-                currentCalendarDate = new Date($scope.currentDate);
-
-            today.setHours(0, 0, 0, 0);
-            currentCalendarDate.setHours(0, 0, 0, 0);
-            return today.getTime() === currentCalendarDate.getTime();
-        };
-
-        $scope.loadEvents = function () {
-            $scope.eventSource = createRandomEvents();
-        };
-
-        $scope.onEventSelected = function (event) {
-            $scope.event = event;
-        };
-
-        $scope.onTimeSelected = function (selectedTime) {
-            console.log('Selected time: ' + selectedTime);
-        };
-
-        function createRandomEvents() {
-            var events = [];
-            for (var i = 0; i < 20; i += 1) {
-                var date = new Date();
-                var eventType = Math.floor(Math.random() * 2);
-                var startDay = Math.floor(Math.random() * 90) - 45;
-                var endDay = Math.floor(Math.random() * 2) + startDay;
-                var startTime;
-                var endTime;
-                if (eventType === 0) {
-                    startTime = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + startDay));
-                    if (endDay === startDay) {
-                        endDay += 1;
-                    }
-                    endTime = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + endDay));
-                    events.push({
-                        title: 'All Day - ' + i,
-                        startTime: startTime,
-                        endTime: endTime,
-                        allDay: true
+        $scope.allToLimbo = function () {
+            if (confirm('Desea enviar todos al limbo?')) {
+                if (confirm('Se moveran y enviara correo. Seguro?')) {
+                    var queryday = ($filter('date')($scope.dtdate, "yyyy/MM/dd"));
+                    $scope.promise = $http.post("endpoints/sorry.php?date='" + queryday + "'").success(function () {
+                        $scope.updateBookList();
                     });
-                } else {
-                    var startMinute = Math.floor(Math.random() * 24 * 60);
-                    var endMinute = Math.floor(Math.random() * 180) + startMinute;
-                    startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate() + startDay, 0, date.getMinutes() + startMinute);
-                    endTime = new Date(date.getFullYear(), date.getMonth(), date.getDate() + endDay, 0, date.getMinutes() + endMinute);
-                    events.push({
-                        title: 'Event - ' + i,
-                        startTime: startTime,
-                        endTime: endTime,
-                        allDay: false
+                };
+            };
+        };
+
+        $scope.TIselect = function(jumper) {
+            /*
+            if (jumper.jumptype != undefined) {
+                if (jumper.jumptype.substring(0, 2) == 'TI') {
+                    return true;
+                }
+        }
+            return false;
+            */
+        };
+
+        $scope.NotCustomer = function(jumper) {
+            if (jumper.instructor == 0 || jumper.autoid == null)
+            {
+                return true;
+            }
+            return false;
+        };
+
+        $scope.test = function (item) {
+            console.log(item);
+        };
+
+        $scope.createNewLoad = function() {
+            // Look for last load
+            var arrayLoads = orderBy($scope.loadsList($scope.manifestLoads), 'loadnumber', true);
+
+            if (arrayLoads.length > 0)
+            {
+                var load = arrayLoads[0];
+            }
+            else
+            {
+                load = {'loadnumber': 0};
+            }
+
+            var loaddate = ($filter('date')($scope.dtdate, "yyyyMMdd"));
+            var loadid = "" + loaddate + (load.loadnumber + 1);
+
+            var newloadreg = {
+                'autoid': '',
+                'skydiverid': null,
+                'skydiver': null,
+                'weight': null,
+                'altitude': null,
+                'jumptypeid': null,
+                'jumptype':  null,
+                'instructor': 0,
+                'altitude': null,
+                'video': null,
+                'loadid': loadid,
+                'loadnumber': load.loadnumber + 1
+            };
+
+            // Send to Manifest
+            $scope.manifestLoads.push(newloadreg);
+
+            // Save manifest
+            getLocalStorage.updateManifestLoads($scope);
+        };
+
+        $scope.LoadSkydivers = function() {
+            $http.get('/endpoints/skydivers.php').success(function (data) {
+                $scope.Skydivers = data;
+            });
+        };
+
+        $scope.LoadSkydivers();
+
+        $scope.AddSkydiverToLoad = function (skydiver) {
+            if (!(skydiver === undefined) && !($scope.selectedrowManifestMgntObj === undefined)) {
+
+                // check if skydiver already in load
+                var loadnumber = $scope.selectedrowManifestMgntObj[0].loadnumber;
+                var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                    return loaddata.loadnumber == loadnumber;
+                });
+
+                var SkydiverInLoad = $.grep(loadreg, function (value) {
+                    return (value.skydiverid == skydiver.id);
+                });
+
+                if (SkydiverInLoad.length == 0) {
+
+                    var loadid = $scope.selectedrowManifestMgntObj[0].loadid;
+
+                    var loadnumber = $scope.selectedrowManifestMgntObj[0].loadnumber;
+
+                    var jumpstype = getLocalStorage.findJumpTypeReq(skydiver.jumptypeid);
+
+                    var autoid = "" + loadid + skydiver.id;
+                    var newloadreg = {
+                        'autoid': autoid,
+                        'skydiverid': skydiver.id,
+                        'skydiver': skydiver.firstname,
+                        'weight': skydiver.weight,
+                        'altitude': skydiver.altitude,
+                        'jumptypeid': skydiver.jumptypeid,
+                        'jumptype':  jumpstype.jumptype,
+                        'description':  jumpstype.description,
+                        'instructor': 0,
+                        'altitude': jumpstype.altitude,
+                        'loadid': loadid,
+                        'loadnumber': loadnumber,
+                        'priceslots': jumpstype.priceslots,
+                        'price': jumpstype.price
+                    };
+
+                    // Send to Manifest
+                    $scope.manifestLoads.push(newloadreg);
+
+                    // Clear null reg for empty loads
+                    var loadclean = $.grep($scope.manifestLoads, function (loaddata) {
+                        return loaddata.skydiverid == null;
+                    });
+
+                    angular.forEach(loadclean, function (value) {
+                        var index = $scope.manifestLoads.indexOf(value)
+                        $scope.manifestLoads.splice(index,1);
+                    });
+                    /// end clean
+
+                    // Save manifest
+                    getLocalStorage.updateManifestLoads($scope);
+                }
+                else
+                {
+                    $scope.question = "Paracaidista ya se encuentra en el vuelo";
+                    $scope.questionModal = $uibModal.open({
+                        templateUrl: 'question.html',
+                        scope: $scope
                     });
                 }
             }
-            return events;
+            else {
+                alert("Seleccione un paracaidista y un vuelo");
+            }
         }
 
-        $scope.alert = function(){
+        $scope.moveUpLocal = function() {
+            var loadfrom = $scope.selectedrowManifestMgntObj[0].loadnumber;
+            var loadidfrom = $scope.selectedrowManifestMgntObj[0].loadid;
 
-            //reset
-            $scope.showError = false;
-            $scope.doFade = false;
-
-            $scope.showError = true;
-
-            $scope.errorMessage = 'Error has ocurred!!!';
-
-            $timeout(function(){
-                $scope.doFade = true;
-            }, 2500);
-        };
-
-
-        $scope.$watch('dt', function () {
-                $scope.updateTimeSlots($scope.selectedTime);
+            var arrayList = $.grep($scope.manifestLoads, function (load) {
+                return load.loadnumber < loadfrom;
             });
 
+            var arrayListOrder = orderBy($scope.loadsList(arrayList), 'loadnumber', true);
+            if (arrayListOrder.length > 0)
+            {
+                var loadto = arrayListOrder[0].loadnumber;
+                var loadidto = arrayListOrder[0].loadid;
 
-        $http.get('endpoints/date.php', { cache: 'true'})
-            .success(function(data) {
-                $scope.date = data[0].date;
-                $scope.date = $scope.date.replace("-","/").replace("-","/")
-                $scope.toggleDates();
+                var loadfromreg = $.grep($scope.manifestLoads, function (load) {
+                    return load.loadnumber == loadfrom;
+                });
+
+                var loadtoreg = $.grep($scope.manifestLoads, function (load) {
+                    return load.loadnumber == loadto;
+                });
+
+                angular.forEach(loadfromreg, function(value, key) {
+                    value.loadnumber = loadto;
+                    value.loadid = loadidto;
+                    value.autoid = "" + value.loadid + value.skydiverid;
+                });
+
+                angular.forEach(loadtoreg, function(value, key) {
+                    value.loadnumber = loadfrom;
+                    value.loadid = loadidfrom;
+                    value.autoid = "" + value.loadid + value.skydiverid;
+                });
+
+                $scope.selectedrowManifestMgnt = $scope.selectedrowManifestMgnt - 1;
+
+                $scope.automanifestReOrderLocal(loadto);
+
+                // Save manifest
+                getLocalStorage.updateManifestLoads($scope);
+            };
+        };
+
+        $scope.moveDownLocal = function() {
+            var loadfrom = $scope.selectedrowManifestMgntObj[0].loadnumber;
+            var loadidfrom = $scope.selectedrowManifestMgntObj[0].loadid;
+
+            var arrayList = $.grep($scope.manifestLoads, function (load) {
+                return load.loadnumber > loadfrom;
             });
 
-        $scope.selectFila = function(row)
-        {
-            $scope.selectedrow = row;
-            $scope.indice = row;
+            var arrayListOrder = orderBy($scope.loadsList(arrayList), 'loadnumber', false);
+            if (arrayListOrder.length > 0)
+            {
+                var loadto = arrayListOrder[0].loadnumber;
+                var loadidto = arrayListOrder[0].loadid;
 
+                var loadfromreg = $.grep($scope.manifestLoads, function (load) {
+                    return load.loadnumber == loadfrom;
+                });
+
+                var loadtoreg = $.grep($scope.manifestLoads, function (load) {
+                    return load.loadnumber == loadto;
+                });
+
+                angular.forEach(loadfromreg, function(value, key) {
+                    value.loadnumber = loadto;
+                    value.loadid = loadidto;
+                    value.autoid = "" + value.loadid + value.skydiverid;
+                });
+
+                angular.forEach(loadtoreg, function(value, key) {
+                    value.loadnumber = loadfrom;
+                    value.loadid = loadidfrom;
+                    value.autoid = "" + value.loadid + value.skydiverid;
+                });
+
+                $scope.selectedrowManifestMgnt = $scope.selectedrowManifestMgnt + 1;
+
+                $scope.automanifestReOrderLocal(loadfrom);
+
+                // Save manifest
+                getLocalStorage.updateManifestLoads($scope);
+            }
         };
 
-        $scope.showgroupid = function () {
-            $scope.groupidview = true;
+        $scope.manifestReorder = function () {
+            $scope.question = "Desea reordernar el manifiesto?";
+            $scope.questionModal = $uibModal.open({
+                templateUrl: 'question.html',
+                scope: $scope
+            });
+            $scope.questionModal.result.then(function () {
+                $scope.automanifestReOrderLocal(1);
+                getLocalStorage.updateManifestLoads($scope);
+            });
         };
 
-        function makeid()
-        {
-            var mid = "";
-            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-            for( var i=0; i < 5; i++ )
-                mid += possible.charAt(Math.floor(Math.random() * possible.length));
-            return mid;
-        };
+        $scope.TItandemweight = function(loadto){
 
 
-        $scope.open = function (book) {
-            var bookcopy = angular.copy(book);
-            var modalInstance = $uibModal.open({
-                templateUrl: 'bookingEdit.html',
-                controller: 'bookingEditCtrl',
-                resolve: {
-                    item: function () {
-                        return book;
-                    }
+            var manifestTIsEnable = $scope.TItandemweightExtension(loadto);
+            var manifestTIsEnabledMain = angular.copy(manifestTIsEnable);
+
+            angular.forEach(manifestTIsEnabledMain, function (TI) {
+                TI.pesoavg = 0;
+                if ((TI.saltos - TI.start_jumps) != 0) {
+                    TI.pesoavg = (TI.peso - 1) / (TI.saltos - TI.start_jumps);
                 }
-            }).result.then(function (item) {
-                    if ( typeof(book) === "object" ) // update
-                    {
-                        var index = $scope.Books.indexOf(book);
-                        $scope.Books.splice(index,1,item);
+            });
+
+            return manifestTIsEnabledMain;
+        };
+
+        $scope.TItandemweightExtension = function (loadto) {
+            var manifestTIsEnabled = orderBy($scope.manifestTIs, 'loggedin');
+
+            angular.forEach(manifestTIsEnabled, function(TI) {
+                TI.peso = 0; //TI.start_weight;
+                TI.saltos = TI.start_jumps;
+            });
+
+            var arrayList = $.grep($scope.manifestLoads, function (load) {
+                return load.loadnumber < loadto;
+            });
+
+            var arrayListOrder = orderBy($scope.loadsList(arrayList), 'loadnumber', false);
+
+            angular.forEach(arrayListOrder, function (load) {
+                var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                    return loaddata.loadnumber == load.loadnumber;
+                });
+
+                // Get Students
+                var loadregStudents = orderBy($.grep(loadreg, function (loaddata) {
+                    if (loaddata.autoid != null) {
+                        return (loaddata.description.substr(0, 2) == "TL");
                     }
-                    else // add new
-                    {
-                        $scope.Books.push(item);
-                    }
-                    if ($scope.bookedit) {
-                        $scope.updateTimeSlots('0');
+                }), '-weight');
+
+                var weightcount = 1;
+                angular.forEach(loadregStudents, function(regStudent) {
+                    // Construct TI reg object
+                    var TIforStudent = $.grep(loadreg, function (TI) {
+                        return TI.instructor == regStudent.skydiverid;
+                    });
+
+
+                    if (TIforStudent.length > 0) {
+                        var TIforManifestEnabled = $.grep(manifestTIsEnabled, function (TI) {
+                            return TI.id == TIforStudent[0].skydiverid;
+                        });
+
+                        var index = manifestTIsEnabled.indexOf(TIforManifestEnabled[0]);
+                        manifestTIsEnabled[index].saltos = manifestTIsEnabled[index].saltos + 1;
+
+                        // Lo comente porque si se deberia computar. sino cuando divida x saltos va a dar mejor la cantidad.
+                        // Esto solo se daba cuando contaba la cantidad de adelante y atraz y no contaba por ponderasion de peso.
+                        // si llevo uno solo no se computa;
+                        //if (loadregStudents.length > 1) {
+                            manifestTIsEnabled[index].peso = manifestTIsEnabled[index].peso + weightcount;
+                        //};
+                        weightcount = weightcount - 1;
                     }
                 });
+            });
+
+            return manifestTIsEnabled;
         };
 
-        $scope.bookdelete = function () {
-            if (confirm('Desea eliminar el registro?')) {
-                var index = $scope.Books.indexOf(this.book);
+        $scope.automanifestReOrderLocal = function (loadto) {
 
-                // remove from database;
-                this.book.deleted = true;
+            var arrayList = $.grep($scope.manifestLoads, function (load) {
+                return load.loadnumber >= loadto;
+            });
 
-                if (typeof this.book === "object" && this.book.id > 0) {
-                //    this.book.$remove();
+            var arrayListOrder = orderBy($scope.loadsList(arrayList), 'loadnumber', false);
+
+            angular.forEach(arrayListOrder, function (load) {
+
+                var manifestTIsEnabled = $scope.TItandemweight(load.loadnumber);
+
+                // Get Load information
+                var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                    return loaddata.loadnumber == load.loadnumber;
+                });
+
+                // Get Students
+                var loadregStudents = orderBy($.grep(loadreg, function (loaddata) {
+                    if (loaddata.autoid != null) {
+                        return (loaddata.description.substr(0, 2) == "TL");
+                    }
+                }), '-weight');
+
+                if (loadregStudents.length > 0) {
+
+                    // Delete Students from manifest
+                    angular.forEach(loadregStudents, function(reg) {
+                        var index = $scope.manifestLoads.indexOf(reg);
+                        $scope.manifestLoads.splice(index,1);
+                    });
+
+                    // Get TIs from load
+                    var loadregTI = $.grep(loadreg, function (loaddata) {
+                        return (loaddata.description.substr(0, 2) == "TI");
+                    });
+
+                    // Delete TIs from loads
+                    angular.forEach(loadregTI, function(valueTI){
+                        var index = $scope.manifestLoads.indexOf(valueTI);
+                        $scope.manifestLoads.splice(index,1);
+                    });
+
+                    // Remove instructor already in load. If funjump or AFF or other
+                    var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                        return loaddata.loadnumber == load.loadnumber;
+                    });
+
+                    var manifestTIsEnabledTmp = angular.copy(manifestTIsEnabled);
+
+                    angular.forEach(manifestTIsEnabledTmp, function (mTI){
+                        var IsInLoad = $.grep(loadreg, function(reg)
+                        {
+                            return ((reg.skydiverid == mTI.id))
+                        });
+
+                        if (IsInLoad.length != 0)
+                        {
+                            var index = manifestTIsEnabledTmp.indexOf(mTI);
+                            manifestTIsEnabledTmp.splice(index,1);
+                        };
+                    });
+
+                    // Get instructor from list
+                    var TIorderByAdelanteTemp = orderBy($.grep(manifestTIsEnabledTmp, function (TI) {
+                        if (TI.InstJumpStop != 0)
+                        {
+                            return (TI.loggedin != 0 && load.loadnumber > TI.InstJumpStart && load.loadnumber <= TI.InstJumpStop);
+                        }
+                        return (TI.loggedin != 0 && load.loadnumber > TI.InstJumpStart);
+
+                    }), '[saltos+Asc,loggedin+Asc]');
+
+
+                    // Get instructor list for students length
+                    var TIorderByAdelanteLoadTemp = [];
+
+                    for (var i=0; i < loadregStudents.length; i++) {
+                        TIorderByAdelanteLoadTemp.push(TIorderByAdelanteTemp[i]);
+                    }
+
+                    var TIorderByPeso = orderBy(TIorderByAdelanteLoadTemp, '[pesoavg]');
+
+                    var ticounter = 0;
+
+                    // Get instructors reg for each student and save on TIforStudents
+                    angular.forEach(loadregStudents, function(regStudent) {
+                        $scope.manifestLoads.push(regStudent);
+
+                        // Construct TI reg object
+                        var TIforStudent = $.grep(loadregTI, function(TIcopy){
+                            return TIcopy.instructor == regStudent.skydiverid;
+                        });
+
+                        TIforStudent[0].autoid = '' + TIforStudent[0].loadid + TIorderByPeso[ticounter].id;
+                        TIforStudent[0].skydiverid = TIorderByPeso[ticounter].id;
+                        TIforStudent[0].skydiver = TIorderByPeso[ticounter].name;
+
+                        $scope.manifestLoads.push(TIforStudent[0]);
+
+                        ticounter = ticounter + 1;
+                    });
+                };
+            });
+        };
+
+        $scope.loadsList = function (arrayList) {
+            var result = [];
+            if(angular.isArray(arrayList)) {
+                var val = {loadnumber: 0};
+                var arrayLoads = orderBy(arrayList, 'loadnumber', true);
+                for(var i=0; i< arrayLoads.length; i++) {
+                    if (val.loadnumber != arrayList[i].loadnumber) {
+                        var val = {loadnumber: arrayList[i].loadnumber, loadid: arrayList[i].loadid};
+                        result.push(val);
+                    }
                 }
+            };
 
-                //$scope.Books.splice(index, 1);
-                if ($scope.bookedit) {
-                    $scope.updateTimeSlots('0');
+            return result;
+        };
+
+
+        $scope.removeJumperFromLoadLocal = function(jumper){
+            var arrayList = $.grep($scope.manifestLoads, function (load) {
+                return ((load.skydiverid == jumper.skydiverid || load.skydiverid == jumper.instructor || load.instructor == jumper.skydiverid) && load.loadnumber == jumper.loadnumber) ;
+            });
+
+            angular.forEach(arrayList, function(value) {
+                var index = $scope.manifestLoads.indexOf(value);
+                $scope.loads_skydivers_delete.push($scope.manifestLoads[index]);
+                $scope.manifestLoads.splice(index,1);
+            });
+
+            $scope.question = "Desea reordernar el manifiesto?";
+            $scope.questionModal = $uibModal.open({
+                templateUrl: 'question.html',
+                scope: $scope
+            });
+            $scope.questionModal.result.then(function () {
+                $scope.automanifestReOrderLocal(jumper.loadnumber);
+            });
+
+
+            // Fix the last load. I thing =D
+            var obj = $scope.manifestLoads;
+            if (obj.length == 0) {
+                obj.push({});
+            }
+
+
+            // Save manifest
+            getLocalStorage.updateManifestLoads($scope);
+            if ($scope.manifestLoads[0].loadid == undefined)
+            {
+                $scope.manifestLoads = [];
+            }
+
+        };
+
+        $scope.getTandemSlotsTotal = function() {
+            $scope.TandemSlotsTotal = 0;
+            angular.forEach($scope.manifestLoads, function (loadreg) {
+                if  (loadreg.description == "TL1")
+                {
+                    $scope.TandemSlotsTotal = $scope.TandemSlotsTotal + loadreg.priceslots;
+                    console.log(loadreg.priceslots);
+                };
+            });
+        };
+
+        $scope.QuestionNo = function () {
+            $scope.questionModal.dismiss('Close');
+        };
+
+        $scope.QuestionYes = function () {
+            $scope.questionModal.close();
+        };
+
+        $scope.AlertOk = function () {
+            $scope.alertModal.close();
+        }
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Slot Edit
+
+        $scope.slotEdit = {};
+
+        $scope.slotEditisTIdisabled = function (TI) {
+            if (TI.InstJumpStart < $scope.slotEdit.slot.loadnumber && (TI.InstJumpStop == 0 || TI.InstJumpStop >= $scope.slotEdit.slot.loadnumber)) {
+                return true;
+            }
+            return false;
+        };
+
+        $scope.slotEditCancel = function () {
+            $scope.slotEditModal.dismiss('Close');
+        };
+
+        $scope.slotEditSave = function () {
+
+            // get load records
+            var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                return loaddata.loadnumber == $scope.slotEdit.slot.loadnumber;
+            });
+
+            // Check if is a not avaialable instructor
+            $scope.slotEdit.exit = false;
+            angular.forEach($scope.slotEdit.slot.jumpTypeReqList, function(req, key) {
+
+                if (req.skydiverid == undefined) {
+                    $scope.slotEdit.exit = true;
+                    return;
                 }
+                var TI = $.grep($scope.manifestTIs, function (TItemp) {
+                    return TItemp.id == req.skydiverid;
+                });
+
+                if (TI[0].notavailable) {
+                    // look for instructor
+                    var instructor = $.grep(loadreg, function (value) {
+                        return (value.skydiverid == req.skydiverid);
+                    });
+
+                    if (instructor.length && $scope.slotEdit.slot.jumpTypeReqListOrig.length) {
+                        instructor[0].weight = $scope.slotEdit.slot.jumpTypeReqListOrig[key].weight;
+                        instructor[0].skydiverid = $scope.slotEdit.slot.jumpTypeReqListOrig[key].skydiverid;
+                        instructor[0].skydiver = $scope.slotEdit.slot.jumpTypeReqListOrig[key].skydiver;
+                        instructor[0].autoid = '' + $scope.slotEdit.slot.jumpTypeReqListOrig[key].loadid + instructor[0].skydiverid;
+                    }
+                    else
+                    {
+                        $scope.alertmsg = "El instructor ya se encuentra en el vuelo actual";
+                        $scope.alertModal = $uibModal.open({
+                            templateUrl: 'alert.html',
+                            scope: $scope
+                        });
+                        $scope.slotEdit.exit = true
+                    }
+                };
+            });
+
+            if ($scope.slotEdit.exit) {return;}
+            // Find and delete instructors
+
+            // look for instructor
+            var instructors = $.grep(loadreg, function (value) {
+                return (value.instructor == $scope.slotEdit.slot.skydiverid);
+            });
+
+            // delete instructors
+            angular.forEach(instructors, function(value){
+                var index = $scope.manifestLoads.indexOf(value);
+                $scope.loads_skydivers_delete.push($scope.manifestLoads[index]);
+                $scope.manifestLoads.splice(index,1);
+            });
+
+            var loadreg = $.grep($scope.manifestLoads, function(loaddata){
+                return (loaddata.autoid == $scope.slotEdit.slot.autoid)
+            });
+
+            var index = $scope.manifestLoads.indexOf(loadreg[0]);
+
+            var jumpstype = getLocalStorage.findJumpTypeReq($scope.slotEdit.slot.jumptypeid);
+
+            $scope.slotEdit.slot.priceslots = jumpstype.priceslots;
+            $scope.slotEdit.slot.price = jumpstype.price;
+            $scope.slotEdit.slot.description = jumpstype.description;
+            $scope.slotEdit.slot.jumptype = jumpstype.description;
+            $scope.slotEdit.slot.altitude = jumpstype.altitude;
+
+            $scope.manifestLoads[index] = $scope.slotEdit.slot;
+
+            // Add new instructors
+            var indexpos = index;
+            angular.forEach($scope.slotEdit.slot.jumpTypeReqList, function(req){
+
+                // Check if is a not avaialable instructor
+                var instructor = $.grep($scope.manifestTIs, function (value) {
+                    return (value.id == req.skydiverid);
+                });
+
+                req.loadid = $scope.slotEdit.slot.loadid;
+                req.loadnumber = $scope.slotEdit.slot.loadnumber;
+                req.skydiverid = instructor[0].id;
+                req.skydiver = instructor[0].name;
+                req.weight = instructor[0].weight;
+                req.autoid = "" + req.loadid + req.skydiverid;
+                req.instructor = $scope.slotEdit.slot.skydiverid;
+                if (req.jumptypeid == undefined) {
+                    req.jumptypeid = req.id;
+                };
+                req.jumptype = req.description;
+                $scope.manifestLoads.splice((indexpos+1),0,req);
+                indexpos = indexpos + 1;
+            });
+
+            // Reorder manifest
+            $scope.question = "Desea reordernar el manifiesto?";
+            $scope.questionModal = $uibModal.open({
+                templateUrl: 'question.html',
+                scope: $scope
+            });
+            $scope.questionModal.result.then(function () {
+                $scope.automanifestReOrderLocal($scope.slotEdit.slot.loadnumber + 1);
+            });
+
+            // Save manifest
+            getLocalStorage.updateManifestLoads($scope);
+            $scope.slotEditModal.close();
+        };
+
+
+        $scope.slotEditInstColor = function (req) {
+            var TI = $.grep($scope.manifestTIs, function (TItemp) {
+                return TItemp.id == req.skydiverid;
+            });
+            if (TI[0].notavailable == true) {
+                return {"color": "red"}
+            }
+            return {};
+        };
+
+        $scope.slotEditF = function (slot) {
+            if (slot.instructor == 0) {
+                $scope.slotEdit = {};
+                $scope.slotEdit.slot = angular.copy(slot);
+                $scope.slotEdit.jumpstypeReq = getLocalStorage.getJumpsTypeReqAll();
+                $scope.slotEdit.jumptype = getLocalStorage.findJumpTypeReq($scope.slotEdit.slot.jumptypeid);
+
+                $scope.slotEdit.jumpstype = getLocalStorage.getJumpsType();
+                $scope.slotEdit.altitudes = getLocalStorage.getAltitudes();
+
+                var loadreg = $.grep($scope.manifestLoads, function (loaddata) {
+                    return loaddata.loadnumber == $scope.slotEdit.slot.loadnumber;
+                });
+
+                var instructor = $.grep(loadreg, function (value) {
+                    return (value.instructor == slot.skydiverid);
+                });
+
+                var instructor = angular.copy(instructor);
+
+                angular.forEach($scope.manifestTIs, function (mTI){
+                    var IsInLoad = $.grep(loadreg, function(reg)
+                    {
+                        return ((reg.skydiverid == mTI.id))
+                    });
+
+                    mTI.notavailable = false;
+                    if (IsInLoad.length != 0 && IsInLoad[0].instructor != $scope.slotEdit.slot.skydiverid)
+                    {
+                        mTI.notavailable = true;
+                    }
+                });
+
+                $scope.slotEdit.slot.jumpTypeReqList = [];
+                angular.forEach(instructor,function(inst){
+                    $scope.slotEdit.slot.jumpTypeReqList.push(inst);
+                    $scope.slotEdit.slot.Instructors = true;
+                });
+
+                $scope.slotEdit.slot.jumpTypeReqListOrig = angular.copy($scope.slotEdit.slot.jumpTypeReqList);
+
+                $scope.slotEditModal = $uibModal.open({
+                    templateUrl: 'slotedit.html',
+                    scope: $scope
+                });
+            };
+        };
+
+        $scope.slotEditJumptypeSelect = function (reg)
+        {
+            if (reg != undefined) {
+                reg.jumptypeid = getLocalStorage.getJumpTypeReqID($scope.slotEdit.jumptype);
+
+                var jumptype = {
+                    'jumptype': $scope.slotEdit.jumptype.jumptype,
+                    'altitude': $scope.slotEdit.jumptype.altitude,
+                    'video': $scope.slotEdit.jumptype.video
+                };
+
+                $scope.slotEdit.slot.jumpTypeReqListTemp = $scope.slotEdit.slot.jumpTypeReqList;
+                $scope.slotEdit.slot.jumpTypeReqList = getLocalStorage.getJumpTypeReqList(jumptype);
+                $scope.slotEdit.slot.jumpTypeReqList.splice(0, 1);
+
+                $scope.slotEdit.slot.Instructors = false;
+
+                if ($scope.slotEdit.slot.jumpTypeReqList.length > 0)
+                {
+                    $scope.slotEdit.slot.Instructors = true;
+                    if ($scope.slotEdit.slot.jumpTypeReqListTemp.length > 0) {
+                        if ($scope.slotEdit.slot.jumpTypeReqList[0].description == $scope.slotEdit.slot.jumpTypeReqListTemp[0].description) {
+                            $scope.slotEdit.slot.jumpTypeReqList[0].skydiverid = $scope.slotEdit.slot.jumpTypeReqListTemp[0].skydiverid;
+                        }
+                        ;
+                    };
+                };
+
+            }
+        };
+
+        /*
+        $scope.$watch('slotEdit.jumptype.jumptype', function () {
+            $scope.slotEditJumptypeSelect($scope.slotEdit.slot);
+        });
+
+        $scope.$watch('slotEdit.jumptype.altitude', function () {
+            $scope.slotEditJumptypeSelect($scope.slotEdit.slot);
+        });
+        */
+
+        // Slot edit ends.
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Skydiver History
+        $scope.SkydiverHistory = {};
+
+        $scope.SkydiversEditBooking = function () {
+
+            var book = $scope.selectedRowSkydiverObj;
+
+            var bookcopy = angular.copy(book);
+            book.dob = new Date(book.dob);
+            book.video = '';
+
+            var modalInstance = $uibModal.open({
+                templateUrl: 'skydiveredit.html',
+                controller: 'manifestEditCtrl',
+                scope: $scope,
+                resolve: {item: book}
+            }).result.then(function (item) {
+                    if (angular.isDate(item.dob)) {
+                        item.dob.setMinutes(item.dob.getMinutes() + item.dob.getTimezoneOffset());
+                        item.dob = ($filter('date')(item.dob, "yyyy/MM/dd"));
+                    }
+                    if (!angular.equals(bookcopy, item)) {
+                        getLocalStorage.saveSkydivers($scope,item);
+                    };
+                }, function () {
+                    delete $scope.action;
+                    var index = $scope.Skydivers.indexOf(book);
+                    $scope.Skydivers[index] = bookcopy;
+                });
+
+
+        };
+
+        $scope.SkydiverHistoryRefresh = function ()
+        {
+            var obj = $scope.selectedRowSkydiverObj;
+            $scope.promise = $http.post('endpoints/skydiverhistory.php', obj)
+                .success(function(result) {
+                    $scope.SkydiverHistory = {'data': result, 'Total': 0};
+                    $scope.SkydiverHistoryRefreshLocal();
+                });
+            return $scope.promise;
+        };
+
+        $scope.SkydiverHistoryRefreshLocal = function() {
+            $scope.SkydiverHistory.Total = 0;
+            angular.forEach($scope.SkydiverHistory.data, function (value) {
+                if (value.deleted != 1) {
+                    $scope.SkydiverHistory.Total += value.amount
+                }
+            });
+        }
+
+        $scope.skydiverHistory = function () {
+
+            var refresh = $scope.SkydiverHistoryRefresh();
+            $scope.SkydiverHistory.cash = 0;
+            refresh.success(function () {
+                $scope.SkydiverHistoryModal = $uibModal.open({
+                    templateUrl: 'skydiverhistory.html',
+                    scope: $scope
+                });
+            });
+        };
+
+        $scope.SkydiverHistoryClose = function (){
+            $scope.SkydiverHistoryModal.dismiss('Close');
+        };
+
+        $scope.SkydiverHistoryPAY = function (value) {
+            if (value.description == 'PAYMENT')
+            {
+                return true;
+            }
+            return false;
+        };
+
+        $scope.SkydiverHistoryGetCash = function() {
+
+            if ($scope.SkydiverHistory.cash === 0 && $scope.SkydiverHistory.Total < 0)
+            {
+                $scope.SkydiverHistory.cash = -$scope.SkydiverHistory.Total;
+            }
+
+            if ($scope.SkydiverHistory.cash > 0) {
+                var obj = {};
+                var date = new Date();
+
+                obj.date = ($filter('date')(date, "yyyy-MM-dd"));
+                obj.amount = $scope.SkydiverHistory.cash;
+                obj.description = 'PAYMENT';
+                obj.loadnumber = '99';
+
+                obj.payment_date = getLocalStorage.ISODateString(date);
+                obj.id_booking = $scope.selectedRowSkydiverObj.id;
+                obj.type = 'CASH';
+                obj.net_received_amount = $scope.SkydiverHistory.cash;
+                obj.amount = $scope.SkydiverHistory.cash;
+                obj.deleted = 0;
+
+                $scope.SkydiverHistory.data.push(obj);
+
+                getLocalStorage.savePayments(obj);
+
+                $scope.SkydiverHistoryRefreshLocal();
+
+                $scope.SkydiverHistory.cash = 0;
+            }
+            else
+            {
+                alert("Numero invalido");
+            }
+        };
+
+        $scope.SkydiverHistoryRefreshCashInput = function() {
+            $scope.SkydiverHistory.cash = -$scope.SkydiverHistory.Total;
+        };
+
+        $scope.$watch('SkydiverHistory.cash', function() {
+            $scope.SkydiverHistory.mpcash = Math.trunc($scope.SkydiverHistory.cash * 1.1);
+        });
+
+        $scope.SkydiverHistorydeletePayment = function (item) {
+            $scope.question = "Desea eleminar el registro?";
+            $scope.questionModal = $uibModal.open({
+                    templateUrl: 'question.html',
+                    scope: $scope
+                });
+            $scope.questionModal.result.then(function () {
+
+                item.deleted = 1;
+                item.id_booking = $scope.selectedRowSkydiverObj.id;
+                getLocalStorage.savePayments(item);
+
+                var index = $scope.SkydiverHistory.data.indexOf(item);
+                $scope.SkydiverHistory.data.splice(index,1);
+
+                $scope.SkydiverHistoryRefreshLocal();
 
                 return false;
-            }
-        };
-
-        $scope.Books = [];
-
-        $scope.refreshGroup = function() {
-            if ($scope.groupid.length == 5) {
-                $scope.groupid = $scope.groupid.toUpperCase();
-                $scope.promise = BookResource.query({groupid: $scope.groupid}).$promise.then(function (resultBooks) {
-                    $scope.Books = resultBooks;
-                    $scope.bookslengthorig = $scope.Books.length;
-                    if (resultBooks.length == 0) {
-                        $scope.groupid = makeid();
-                        $scope.invalidGroupID = true;
-                    }
-                    else {
-                        $scope.depositpayed = false;
-                            angular.forEach($scope.Books, function(value, key) {
-                                if (value.vdeposit > 0) {
-                                    $scope.depositpayed = true;
-                                }
-                            });
-
-                        BooksGroupsResource.query({groupid: $scope.groupid}).$promise.then(function(resultBooksGroups) {
-                            if (resultBooksGroups.length > 0) {
-                                $scope.selectedTime = resultBooksGroups[0].selectedTime;
-                                $scope.dt = resultBooksGroups[0].bookdate;
-                                var bookenddate = new Date(resultBooksGroups[0].bookdate + " 00:00:00");
-                                var nextday = new Date($scope.date);
-                                nextday.setDate(nextday.getDate() + 1);
-
-                                if (bookenddate <= nextday) {
-                                    $scope.dtdisabled = true;
-                                }
-                                //$scope.updateTimeSlots(resultBooksGroups[0].selectedTime);
-                            }
-                        });
-                    }
-                });
-
-            }
-            else {
-                $scope.Books = [];
-            };
-        };
-
-        $scope.updateTimeSlots = function(selectedTime) {
-            var obj = {};
-            var obj = new Object();
-            var fecha = $filter('date')($scope.dt, "yyyy/MM/dd");
-            var obj = { "date": fecha, "count":$scope.Books.length, "groupid":$scope.groupid, "length": $scope.Books.length};
-
-            $http.post('endpoints/slotsavailables.php', obj , { cache: 'true'})
-                .success(function(result) {
-                    if (result.error == 'error') {
-                        $scope.alert();
-                    }
-                    else {
-                        if (angular.isArray(result)) {
-                            result.push({ label:'00:00:00', value: '0'});
-                            $scope.TimeSlots = result;
-                            $scope.selectedTime = selectedTime;
-                        }
-
-                    }
-                });
-        };
-
-        // Select if new or edit
-        $scope.groupid = $routeParams.groupid;
-        if (typeof $scope.groupid === 'undefined') {
-            $scope.groupid = makeid();
-            $scope.groupidview=false;
-            $scope.groupiddisabled = false;
-            $scope.invalidGroupID = false;
-            $scope.status = {opened: true};
-            $scope.bookedit = false;
-
-        }
-        else
-        {
-            $scope.groupidview=true;
-            $scope.refreshGroup();
-            $scope.status = {opened: false};
-            $scope.bookedit = true;
-
-
-        }
-
-        $scope.saveBooking = function() {
-            // Waivers
-            var email = false;
-            var phone = false;
-            angular.forEach($scope.Books, function(book)
-            {
-                if (!(book.deleted == true))
-                {
-                    if (!(book.email == undefined)) {
-                        email = true;
-                    }
-                    if (!(book.phone == undefined)) {
-                        phone = true;
-                    }
-                };
-
             });
+        };
 
-            if (email && phone) {
-
-                if (!(localStorage.getItem('username') == null) || $scope.bookedit)  {
-                    // Save DB
-                    $scope.Books[0].groupid = $scope.groupid;
-                    $scope.Books[0].bookdate = $filter('date')($scope.dt, "yyyy/MM/dd");
-                    $scope.Books[0].bookedit = $scope.bookedit;
-                    var bookslength = $scope.Books.length;
-                    if ($scope.bookedit == true) {
-                        bookslength = bookslength - $scope.bookslengthorig;
-                        if (bookslength <= 0) {
-                            bookslength = 0;
-                        }
-                    }
-
-                    $scope.Books[0].bookslength = bookslength;
-                    $scope.Books[0].selectedTime = $scope.selectedTime;
-
-                    $scope.promise = $http.post('endpoints/newBooking.php', $scope.Books).success(function (result) {
-                        if (result.error == 'error') {
-                            $scope.alert();
-                        }
-                        else {
-                            if (angular.isUndefined(result[0].duplicated)) {
-                                //$location.path('booksucess/' + bookslength);
-                                if (!(bookslength === 0)) {
-                                    modalInstance = $uibModal.open({
-                                        templateUrl: 'mppayment.php?mpurl=' + result[0].mpurl  + '&booklength=' + bookslength,
-                                        controller: 'MPpaymentCtrl',
-                                        resolve: {
-                                            item: function () {
-                                            }
-                                        }
-                                    }).result.then(function (item) {
-
-                                        }, function () {
-                                            $location.path('/booksucess/' + $scope.groupid);
-                                        });
-                                }
-                                else {
-                                    $scope.bookupdated = true;
-                                }
-                            }
-                            else
-                            {
-
-                                $mdDialog.show(
-                                    $mdDialog.alert()
-                                        .parent(angular.element(document.querySelector('#popupContainer')))
-                                        .clickOutsideToClose(true)
-                                        .title('Reserva duplicada')
-                                        .textContent('Hemos encontrado una reserva bajo su nombre. Lo redirigiremos a la misma para su edicion.')
-                                        .ok('Entendido')
-                                );
-
-                                $location.path('/booksucess/' + result[0].duplicated);
-                            }
-                        }
-                    });
-                }
-                else {
-                    var modalInstance;
-                    modalInstance = $uibModal.open({
-                        templateUrl: 'waivers.html',
-                        controller: 'termsCtrl',
-                        resolve: {
-                            item: function () {
-                            }
-                        }
-                    }).result.then(function (item) {
-                            // Save DB
-                            $scope.Books[0].groupid = $scope.groupid;
-                            $scope.Books[0].bookdate = $filter('date')($scope.dt, "yyyy/MM/dd");
-                            $scope.Books[0].bookedit = $scope.bookedit;
-                            var bookslength = $scope.Books.length;
-                            if ($scope.bookedit == true) {
-                                bookslength = bookslength - $scope.bookslengthorig;
-                                if (bookslength <= 0) {
-                                    bookslength = 0;
-                                }
-                            }
-
-                            $scope.Books[0].bookslength = bookslength;
-                            $scope.Books[0].selectedTime = $scope.selectedTime;
-
-                            $scope.promise = $http.post('endpoints/newBooking.php', $scope.Books).success(function (result) {
-                                if (result.error == 'error') {
-                                    $scope.alert();
-                                }
-                                else {
-                                    if (angular.isUndefined(result[0].duplicated)) {
-                                        //$location.path('booksucess/' + bookslength);
-                                        if (!(bookslength === 0)) {
-                                            modalInstance = $uibModal.open({
-                                                templateUrl: 'mppayment.php?mpurl=' + result[0].mpurl + '&booklength=' + bookslength,
-                                                controller: 'MPpaymentCtrl',
-                                                resolve: {
-                                                    item: function () {
-                                                    }
-                                                }
-                                            }).result.then(function (item) {
-
-                                                }, function () {
-                                                    $location.path('/booksucess/' + $scope.groupid);
-                                                });
-                                        }
-                                        else {
-                                            $scope.bookupdated = true;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        $location.path('/booksucess/' + result[0].duplicated);
-                                    }
-                                }
-                            });
-                        })
+        $scope.SkydiverHistoryPayMP = function() {
+            if ($scope.SkydiverHistory.mpcash > 0) {
+                var obj = {};
+                var obj = new Object();
+                var price = $scope.SkydiverHistory.mpcash;
+                var mpName = $scope.selectedRowSkydiverObj.firstname + ' ' + $scope.selectedRowSkydiverObj.lastname;
+                var obj = {
+                    "bookid": $scope.selectedRowSkydiverObj.id,
+                    "price": price,
+                    "mpName": mpName,
+                    "mpEmail": $scope.selectedRowSkydiverObj.email,
+                    "mpDNI": $scope.selectedRowSkydiverObj.dni
                 };
-            }
-            else {
-                alert("Debe definir un email y telefono");
-            };
 
-            };
-
-
-        /////////////////////////////////////////
-        // Date Picker
-        $scope.disabled = function (date, mode) {
-            if (!(localStorage.getItem('username') == null)) {
-                return (mode === 'day' && 0);
-            }
-            return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6 ) );
-//            return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6 || date.getDate() === 10 ) );
-//            return ( mode === 'day' && !( (date.getDay() === 0 && !(date.getDate() === 23)) || date.getDay() === 6  ) );
-        };
-
-        $scope.toggleDates = function () {
-            if (localStorage.getItem('username') == null) {
-                $scope.minDate = new Date($scope.date);  //$scope.minDate ? null :
-                $scope.minDate.setDate($scope.minDate.getDate() + 1);
-                $scope.maxDate = new Date(new Date().setMonth(new Date().getMonth() + 1));
+                $scope.promise = $http.post('endpoints/creatempurl.php', obj).success(function (mpurl) {
+                    //win.location = mpurl;
+                    $(".modal-body").html('<iframe width="100%" height="80%" frameborder="0" scrolling="no" allowtransparency="true" src="'+mpurl+'"></iframe>');
+                });
             }
         };
 
-        $scope.opencalendar = function ($event) {
-            $scope.status.opened = true;
-        };
+        $scope.$watch('SkydiverHistory.Total', function () {
+            if ($scope.selectedRowSkydiverObj != undefined) {
+                $scope.selectedRowSkydiverObj.total = $scope.SkydiverHistory.Total;
+            }
+        });
 
-        $scope.setDate = function (year, month, day) {
-            $scope.dt = new Date(year, month, day);
-        };
-
-        $scope.dateOptions = {
-            formatYear: 'yy',
-            startingDay: 1
-        };
-
-
-        // Date Picker End
-        ////////////////////////////////////////
+            // Skydiver History ends.
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 ]);
-
-
-tandemApp.controller('bookingEditCtrl', function ($scope, $modalInstance, item) {
-
-    if ( item == 0 )
-    {
-        $scope.first = true;
-    }
-
-    $scope.cancel = function () {
-        $modalInstance.dismiss('Close');
-    };
-
-    $scope.saveBook = function() {
-        if ($scope.book.dobyear && $scope.book.dobmonth && $scope.book.dobday) {
-            $scope.book.dobdate = $scope.book.dobyear + "/" + $scope.book.dobmonth + "/" + $scope.book.dobday;
-        }
-        if ($scope.book.areacode && $scope.book.phonenumber) {
-            $scope.book.phone = '+54' + $scope.book.areacode + $scope.book.phonenumber;
-        }
-        $modalInstance.close($scope.book);
-    };
-
-// Select Date
-
-    $scope.days = function() {
-
-            var daysList = [];
-            for( var i = 1; i <= 31 ; i++){
-                var iS = i.toString();
-                daysList.push( (iS.length < 2) ? '0' + iS : iS ); // Adds a leading 0 if single digit
-            }
-            return daysList;
-        };
-    $scope.months = function() {
-            var monthList = [];
-            for( var i = 1; i <= 12 ; i++){
-                var iS = i.toString();
-                monthList.push( (iS.length < 2) ? '0' + iS : iS ); // Adds a leading 0 if single digit
-            }
-            return monthList;
-        };
-
-    $scope.years = function() {
-            var yearsList = [];
-            for( var i = 2000; i >= 1940 ; i--){
-                yearsList.push( i.toString() );
-            }
-            return yearsList;
-        };
-
-// End Select Date
-
-});
-
-
-tandemApp.controller('termsCtrl', function ($scope, $modalInstance, item) {
-    $scope.cancel = function () {
-        $modalInstance.dismiss('Close');
-    };
-
-    $scope.acceptTerms = function() {
-        $modalInstance.close(item);
-    };
-});
-
-
-tandemApp.controller('MPpaymentCtrl', function ($scope, $modalInstance, item) {
-
-    $scope.cancel = function () {
-        $modalInstance.dismiss('Close');
-    };
-
-    $scope.acceptMP = function() {
-        $modalInstance.close(item);
-    };
-
-});
-
-
 
 tandemApp.controller('QuickReceptionCtrl', ['$scope', 'BookResource', '$uibModal', '$filter', 'BooksGroupsResource',
     function($scope, BookResource, $uibModal, $filter, BooksGroupsResource) {
@@ -1103,21 +1742,24 @@ tandemApp.controller('QuickReceptionCtrl', ['$scope', 'BookResource', '$uibModal
     }]);
 
 
-tandemApp.controller('timepaymentEditCtrl', function ($scope, $http, $modalInstance, item) {
+tandemApp.controller('timepaymentEditCtrl', function ($scope, $http, $modalInstance, item, $filter) {
 
     $scope.bookgroup = item;
-    $scope.dt = item.bookdate;
 
     $scope.cancel = function () {
         $modalInstance.dismiss('Close');
     };
 
     $scope.saveBookGroup = function() {
+        if ($scope.parent.dttime != undefined) {
+            $scope.bookgroup.bookdate = $scope.parent.dttime;
+        }
         $modalInstance.close($scope.bookgroup);
     };
 
     $scope.saveToLimbo = function() {
-        $scope.bookgroup.bookdate = '0000-00-00';
+        $scope.bookgroup.bookdate = '';
+        $scope.bookgroup.selectedTime = 0;
         $modalInstance.close($scope.bookgroup);
     };
 
@@ -1126,23 +1768,8 @@ tandemApp.controller('timepaymentEditCtrl', function ($scope, $http, $modalInsta
 
     $scope.status = {opened: false};
 
-    $scope.disabled = function (date, mode) {
-        //return ( mode === 'day' && !( date.getDay() === 0 || date.getDay() === 6  ) );
-    };
-
-    $scope.toggleDates = function () {
-        $scope.minDate = new Date($scope.date);  //$scope.minDate ? null :
-        $scope.minDate.setDate($scope.minDate.getDate() +1 );
-        $scope.maxDate = new Date(new Date().setMonth(new Date().getMonth()+1));
-    };
-
-
     $scope.opencalendar = function ($event) {
         $scope.status.opened = true;
-    };
-
-    $scope.setDate = function (year, month, day) {
-        $scope.dt = new Date(year, month, day);
     };
 
     $scope.dateOptions = {
@@ -1150,136 +1777,236 @@ tandemApp.controller('timepaymentEditCtrl', function ($scope, $http, $modalInsta
         startingDay: 1
     };
 
-    // Date Picker End
+    // Date Picker End/
     ////////////////////////////////////////
 
     $scope.updateTimeSlots = function(item) {
-        var obj = {};
-        var obj = new Object();
-        var obj = { "date":item.bookdate, "count":item.cant, "groupid":item.groupid, "admin":true};
-        $http.post('endpoints/slotsavailables.php', obj , { cache: 'true'})
-            .success(function(result) {
-                if (result.error == 'error') {
-                    $scope.alert ();
-                }
-                else {
-                    if (angular.isArray(result)) {
-                        result.push({label: '00:00:00', value: '0'});
-                        $scope.TimeSlots = result;
-                        $scope.bookgroup.schtime = item.selectedTime;
-                    }
-                }
-            });
+
+        var date = $filter('date')($scope.bookgroup.bookdate, "yyyy-MM-dd");
+        $scope.TimeSlots = $.grep($scope.TimeSlotsAll, function(slots) {
+            return slots.slot_date == date;
+        });
+
+
+        $scope.TimeSlots.push({ label:'S/HORARIO', value: 0});
+
+        var TS = $.grep($scope.TimeSlots, function(TS) {
+            return TS.value == item.selectedTime;
+        });
+        if (TS.length == 0) {
+            item.selectedTime = 0;
+        }
     };
 
     $scope.updateTimeSlots(item);
 
+    $scope.$watch('parent.dttime', function () {
+        if ($scope.parent.dttime != undefined) {
+            $scope.bookgroup.bookdate = $scope.parent.dttime;
+            $scope.bookgroup.bookdate.setMinutes($scope.bookgroup.bookdate.getMinutes() + $scope.bookgroup.bookdate.getTimezoneOffset());
+            $scope.updateTimeSlots($scope.bookgroup);
+        }
+    });
 
 });
 
-tandemApp.controller('manifestEditCtrl', function ($scope, $modalInstance, item, $http, $interval) {
+tandemApp.controller('manifestEditCtrl', function ($scope, $modalInstance, $http, $timeout, $filter, getLocalStorage, $uibModal, item) {
 
-    $scope.book = angular.copy(item);
-    $scope.cash = $scope.book.pending;
+    $scope.book = item;
+    $scope.bookcopy = angular.copy(item);
+    $scope.book.cash = 0;
+
+    $scope.refreshCashInput = function () {
+        $scope.book.cash = $scope.book.pending;
+    };
+
+    $scope.jumpstypeReq = getLocalStorage.getJumpsTypeReqAll();
+    $scope.jumptype = getLocalStorage.findJumpTypeReq($scope.book.jumptypeid);
+
+    $scope.jumpstype = getLocalStorage.getJumpsType();
+    $scope.altitudes = getLocalStorage.getAltitudes();
+    $scope.videostype = getLocalStorage.getVideosType();
+
+    $scope.fpending = function () {
+        var extraweight = 0;
+        if ($scope.book.weight > 90) {
+            extraweight = 200;
+        }
+        ;
+        var pending = $scope.jumptype.price - $scope.book.vdeposit + extraweight;
+        if (pending < 0) {
+            pending = 0
+        }
+        ;
+        return (pending);
+    };
+
+    $scope.$watch('book.weight', function () {
+        $scope.book.pending = $scope.fpending();
+    });
+
+    $scope.$watch('book.vdeposit', function () {
+        $scope.book.pending = $scope.fpending();
+    });
+
+    $scope.$watch('book.cash', function () {
+        $scope.mpcash = Math.trunc($scope.book.cash * 1.1);
+    });
+
+    $scope.$watch('jumptype.jumptype', function () {
+        $scope.jumptypeSelect($scope.book);
+
+    });
+
+    $scope.$watch('jumptype.altitude', function () {
+        $scope.jumptypeSelect($scope.book);
+    });
+
+    $scope.$watch('jumptype.video', function () {
+        $scope.jumptypeSelect($scope.book);
+    });
+
+    $scope.jumptypeSelect = function (reg) {
+        reg.jumptypeid = getLocalStorage.getJumpTypeReqID($scope.jumptype);
+        if (reg.jumptypeid == "") {
+            $scope.jumptype.video = "";
+            reg.jumptypeid = getLocalStorage.getJumpTypeReqID($scope.jumptype);
+        }
+
+
+        var jumptype = {
+            'jumptype': $scope.jumptype.jumptype,
+            'altitude': $scope.jumptype.altitude,
+            'video': $scope.jumptype.video
+        };
+        $scope.book.jumpTypeReqList = getLocalStorage.getJumpTypeReqList(jumptype);
+        $scope.book.jumpTypeReqList.splice(0, 1);
+
+        if (reg.jumptypeid) {
+            $scope.jumptype = getLocalStorage.findJumpTypeReq($scope.book.jumptypeid);
+            $scope.book.pending = $scope.fpending();
+        }
+    };
+
+    $scope.jumptypeSelect(item);
 
     var obj = {};
     var obj = new Object();
     var obj = {"id": $scope.book.id};
-    $http.post('endpoints/paymentsresource.php', obj , { cache: 'true'}).success(function(data){
-        if (data.length != 0) {
-            $scope.showpayments = data;
-        }
-    });
-
-    $scope.cashinterval = true;
-    $scope.showpaymentsinterval = true;
-    $scope.onDeleteUpdate = false;
 
     $scope.cancel = function () {
-        $scope.cashinterval = false;
-        $scope.showpaymentsinterval = false;
+        var booktemp = $scope.book;
+        $scope.book = $scope.bookcopy;
+        $scope.book.vdeposit = booktemp.vdeposit;
+        $scope.book.pending = booktemp.pending;
         $modalInstance.dismiss('Close');
     };
 
-    $scope.saveBook = function() {
-        $scope.cashinterval = false;
-        $scope.showpaymentsinterval = false;
+    $scope.saveBook = function () {
+        $scope.book.altitude = $scope.jumptype.altitude;
+        $scope.book.video = $scope.jumptype.video;
         $modalInstance.close($scope.book);
     };
 
+    $scope.getCash = function () {
 
-   $scope.getCash = function() {
+        if ($scope.book.cash === 0) {
+            $scope.book.cash = $scope.book.pending;
+        }
 
-       var objcash = {};
-       var objcash = new Object();
-       var objcash = {"id": $scope.book.id, "type": "CASH", "net_received_amount": $scope.cash};
-       $http.post('endpoints/paymentsresource.php', objcash , { cache: 'true'});
-       $scope.mdselected="0";
+        if ($scope.book.cash > 0) {
+
+            obj = {};
+            obj.type = 'CASH';
+            obj.net_received_amount = $scope.book.cash;
+            obj.amount = $scope.book.cash;
+            obj.payment_date = getLocalStorage.ISODateString(new Date());
+            obj.id_booking = $scope.book.id;
+            obj.deleted = 0;
+            $scope.book.payments.push(obj);
+
+            getLocalStorage.savePayments(obj);
+
+            $scope.refreshCashLocal();
+
+            $scope.book.cash = 0;
+        }
+        else {
+            alert("Numero invalido");
+        }
     };
 
+    $scope.payMP = function () {
+        if ($scope.mpcash > 0) {
+            var price = $scope.mpcash;
+            var obj = {};
+            var obj = new Object();
+            var mpName = $scope.book.firstname + ' ' + $scope.book.lastname;
+            var obj = {
+                "bookid": $scope.book.id,
+                "price": price,
+                "mpName": mpName,
+                "mpEmail": $scope.book.email,
+                "mpDNI": $scope.book.dni
+            };
 
-    $scope.payMP = function() {
-        var price = $scope.book.pending * 1.1;
-        var obj = {};
-        var obj = new Object();
-        var mpName =  $scope.book.firstname + ' ' + $scope.book.lastname;
-        var obj = {"bookid": $scope.book.id, "price": price, "mpName": mpName, "mpEmail": $scope.book.email, "mpDNI": $scope.book.dni};
+            $scope.promise = $http.post('endpoints/creatempurl.php', obj).success(function (mpurl) {
+                //win.location = mpurl;
+                $(".modal-body").html('<iframe width="100%" height="80%" frameborder="0" scrolling="no" allowtransparency="true" src="' + mpurl + '"></iframe>');
 
-        var win = window.open()
-        $http.post('endpoints/creatempurl.php', obj).success(function(mpurl){
-            win.location = mpurl;
-        });
-        $scope.mdselected="0";
-
+            });
+        }
+        else {
+            alert("Debe asignar un numero mayor a 0");
+        }
     };
 
     $scope.deletePayment = function (item) {
         if (confirm('Desea eliminar el registro?')) {
-            var index = $scope.showpayments.indexOf(item);
-            var obj = {};
-            var obj = new Object();
-            var obj = {"id": item.id, "delete": "yes"};
-
-            // remove from database;
-            $scope.onDeleteUpdate = true;
-            $http.post('endpoints/paymentsresource.php', obj , { cache: 'true'}).success(function()
-            {
-                $scope.onDeleteUpdate = false;
-            });
-
-            $scope.showpayments.splice(index, 1);
-
-            return false;
+            item.deleted = 1;
+            getLocalStorage.savePayments(item);
+            $scope.refreshCashLocal();
         }
-    }
+    };
 
-    var cashpromise = $interval(function () {
-            if (($scope.cashinterval) && (!$scope.onDeleteUpdate)) {
-                $scope.cashinterval = false;
-                $http.get('endpoints/bookings.php?where=id=' + $scope.book.id + "&id=0").success(function (data) {
-                    if (data.length != 0) {
-                        $scope.book.vdeposit = data[0].vdeposit;
-                        $scope.book.pending = data[0].pending;
-                    }
-                    $scope.cashinterval = true;
-            })}
-            if (($scope.showpaymentsinterval) && (!$scope.onDeleteUpdate)) {
-                $scope.showpaymentsinterval = false;
-                var obj = {};
-                var obj = new Object();
-                var obj = {"id": $scope.book.id};
-                $http.post('endpoints/paymentsresource.php', obj , { cache: 'true'}).success(function(data){
-                    if (data.length != 0) {
-                        $scope.showpayments = data;
-                    }
-                    $scope.showpaymentsinterval = true;
-                });
+    $scope.refreshCashLocal = function () {
+
+        $scope.book.vdeposit = 0;
+        var total = 0;
+        angular.forEach($scope.book.payments, function (value) {
+            if (value.deleted != 1) {
+                total = total + value.amount;
             }
-            }
-    , 3000);
+        });
+        $scope.book.vdeposit = total;
+    };
 
-    });
+    $scope.refreshCashLocal();
 
+    $scope.refreshCash = function () {
+        getLocalStorage.refreshCash($scope);
+    };
+
+    $scope.OtherPayment = function () {
+        $uibModal.open({
+            templateUrl: 'newpayment.html',
+            controller: 'newPayCtrl'
+        }).result.then(function (pay) {
+
+                obj.payment_date = getLocalStorage.ISODateString(new Date());
+                pay.id_booking = $scope.book.id;
+                pay.amount = pay.net_received_amount;
+                pay.creator = $scope.creator;
+                pay.deleted = 0;
+
+                $scope.book.payments.push(obj);
+
+                getLocalStorage.savePayments(obj);
+
+                $scope.refreshCashLocal();
+            })
+    };
+});
 
 tandemApp.controller('loadEditCtrl', function ($scope, $modalInstance, item, $http) {
 
@@ -1307,4 +2034,24 @@ tandemApp.controller('loadEditCtrl', function ($scope, $modalInstance, item, $ht
         });
         */
     }
+});
+
+
+tandemApp.controller('newPayCtrl', function ($scope, $modalInstance) {
+
+    $scope.cancel = function () {
+        $modalInstance.dismiss('close');
+    };
+
+    $scope.saveNewPayment = function () {
+        if (!($scope.pay.type == "MP" || $scope.pay.type == "CASH"))
+        {
+            $modalInstance.close($scope.pay)
+        }
+        else
+        {
+            alert('Descripcion incorrecta');
+        }
+
+    };
 });

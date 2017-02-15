@@ -10,24 +10,27 @@ include 'config.php';
 require('class.phpmailer.php');
 include('class.smtp.php');
 
-$conn = new mysqli($servername, $username, $password, $db);
+
+if (isset($_COOKIE["easymanifest"])) {
+
+    $conn = new mysqli($servername, $username, $password, $db);
 
 // Check connection
-if ($conn->connect_error) {
-    $error = array('error' => 'error');
-    print json_encode($error);
-    die();
-}
+    if ($conn->connect_error) {
+        $error = array('error' => 'error');
+        print json_encode($error);
+        die();
+    }
 
-$limite = '';
-if (isset($_GET['groupid'])) {
-    $groupid = $_GET['groupid'];
-    $limite = "AND tandem_bookings.groupid = '$groupid'";
-}
+    $limite = '';
+    if (isset($_GET['groupid'])) {
+        $groupid = $_GET['groupid'];
+        $limite = "AND tandem_bookings.groupid = '$groupid'";
+    }
 
 // Selelct bookings with NO deposit
-$rawSQL = "SELECT * FROM
-            (SELECT tandem_bookings.groupid as groupid, (tandem_bookings.deposit +  FLOOR(coalesce(vpayments.amount, 0))) as vdeposit, group_bookings.date, group_bookings.mpurl
+    $rawSQL = "SELECT * FROM
+            (SELECT tandem_bookings.groupid as groupid, (SUM(tandem_bookings.deposit) +  FLOOR(coalesce(vpayments.amount, 0))) as vdeposit, group_bookings.date, group_bookings.mpurl
             FROM tandem_bookings LEFT JOIN
                  (SELECT id_booking, SUM(payments.amount) AS amount FROM payments WHERE deleted = 0 GROUP BY id_booking) as vpayments
                     ON tandem_bookings.id = vpayments.id_booking,
@@ -36,7 +39,7 @@ $rawSQL = "SELECT * FROM
             WHERE tandem_bookings.groupid = group_bookings.groupid AND
                   tandem_bookings.id NOT IN (SELECT skydiverid FROM loads_skydivers) AND
                   tandem_bookings.deleted = 0 AND
-                  (group_bookings.date >= curdate()) AND
+                  ((group_bookings.date >= curdate()) OR group_bookings.date = '0000-00-00') AND
                   slots_booking_date.slot_time = '00:00:00'
                   $limite
 
@@ -44,29 +47,29 @@ $rawSQL = "SELECT * FROM
 
             ORDER BY date ASC;";
 
-$notimenopay = $conn->query($rawSQL);
+    $notimenopay = $conn->query($rawSQL);
 
-if ($conn->connect_error) {
-    $error = array('error' => 'error');
-    print json_encode($error);
-    die();
-}
-
-$pasajeros = '';
-$count = 0;
-$vdeposit = 0;
-
-while ($n = mysqli_fetch_assoc($notimenopay)) {
-
-    $bookdate = $n['date'];
-    $groupid = $n['groupid'];
-    $vdeposit = $n['vdeposit'];
-    $mpurl = '';
-    if (isset($n['mpurl'])) {
-        $mpurl = $n['mpurl'];
+    if ($conn->connect_error) {
+        $error = array('error' => 'error');
+        print json_encode($error);
+        die();
     }
 
-    $rawSQL = "SELECT   tandem_bookings.firstname,
+    $pasajeros = '';
+    $count = 0;
+    $vdeposit = 0;
+
+    while ($n = mysqli_fetch_assoc($notimenopay)) {
+
+        $bookdate = $n['date'];
+        $groupid = $n['groupid'];
+        $vdeposit = $n['vdeposit'];
+        $mpurl = '';
+        if (isset($n['mpurl'])) {
+            $mpurl = $n['mpurl'];
+        }
+
+        $rawSQL = "SELECT   tandem_bookings.firstname,
                         tandem_bookings.lastname,
                         tandem_bookings.email
 
@@ -77,47 +80,56 @@ while ($n = mysqli_fetch_assoc($notimenopay)) {
                 ORDER BY id;";
 
 
-    $result = $conn->query($rawSQL);
+        $result = $conn->query($rawSQL);
 
-    if ($conn->connect_error) {
-        $error = array('error' => 'error');
-        print json_encode($error);
-        die();
-    }
+        if ($conn->connect_error) {
+            $error = array('error' => 'error');
+            print json_encode($error);
+            die();
+        }
 
-    $pasajeros = '';
-    $count = 0;
+        $pasajeros = '';
+        $count = 0;
 
 
-    while ($r = mysqli_fetch_assoc($result)) {
-        $pasajeros .= '<tr><td style="font-weight:bold">' . $r['firstname'] . ', ' . $r['lastname'] . '</td><td style="padding:1px 4px 7px"><b>|</b></td><td>' . $r['email'] . '</td></tr>';
-        $count = $count + 1;
-    }
+        while ($r = mysqli_fetch_assoc($result)) {
+            $pasajeros .= '<tr><td style="font-weight:bold">' . $r['firstname'] . ', ' . $r['lastname'] . '</td><td style="padding:1px 4px 7px"><b>|</b></td><td>' . $r['email'] . '</td></tr>';
+            $count = $count + 1;
+        }
 
-    mysqli_data_seek($result, 0);
+        mysqli_data_seek($result, 0);
 
-    while ($r = mysqli_fetch_assoc($result)) {
-        if ($r['email'] != '') {
-            sendMail($r["email"], $count, $pasajeros, $groupid, $bookdate, $mpurl, $vdeposit);
+        while ($r = mysqli_fetch_assoc($result)) {
+            if ($r['email'] != '') {
+                sendMail($r["email"], $count, $pasajeros, $groupid, $bookdate, $mpurl, $vdeposit);
+            }
         }
     }
-}
 
-exit;
+    exit;
+}
 
 function sendMail($email, $count, $pasajeros, $groupid, $bookdate, $paymenturl, $deposit)
 {
-    $price = $count * 1850;
+    $price = $count * 1900;
 
     if ($deposit > 0) {
-        $horario = '<span style="font-family:Arial,Helvetica,sans-serif,Tahoma;color:#006;font-size:18px;line-height:130%;font-weight:bold;padding:0 5px;" id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Que esta esperando para elegir tu horario? Elegilo YA</span>';
-        $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Gracias por elegirnos. <br> Si desea modificar su reserva utilize el link debajo.</span>';
-        $subject = 'Paracaidismo Rosario - Elegi tu horario YA';
-        $pagar = '<td><a href="http://booking.paracaidismorosario.com/#/' . $groupid . '"><h1 style="color: red;">ELEGIR HORARIO</h1></a></td>';
+        if ($bookdate != '0000-00-00') {
+            $horario = '<span style="font-family:Arial,Helvetica,sans-serif,Tahoma;color:#006;font-size:18px;line-height:130%;font-weight:bold;padding:0 5px;" id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Que esta esperando para elegir tu horario? Elegilo YA</span>';
+            $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Gracias por elegirnos. <br> Si desea modificar su reserva utilize el link debajo.</span>';
+            $subject = 'Paracaidismo Rosario - Elegi tu horario YA';
+            $pagar = '<td><a href="http://booking.paracaidismorosario.com/#/' . $groupid . '"><h1 style="color: red;">ELEGIR HORARIO</h1></a></td>';
+        }
+        else {
+            $horario = '<span style="font-family:Arial,Helvetica,sans-serif,Tahoma;color:#006;font-size:18px;line-height:130%;font-weight:bold;padding:0 5px;" id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Que esta esperando para saltar? Elegi una fecha YA</span>';
+            $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Gracias por elegirnos. <br> Si desea modificar su reserva utilize el link debajo.</span>';
+            $subject = 'Paracaidismo Rosario - Tu reserva te esta esperando';
+            $pagar = '';
+        }
     }
     else {
         $horario = '<span style="font-family:Arial,Helvetica,sans-serif,Tahoma;color:#006;font-size:18px;line-height:130%;font-weight:bold;padding:0 5px;" id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Aun no recibimos el pago de tu reserva. No pierdas tu lugar! Pagalo YA!</span>';
-        $pagar = '<td><a target="_blank" href="' . $paymenturl . '"><img src="http://booking.paracaidismorosario.com/images/pagar.png" alt="Paracaidismo Rosario" width="183" height="74"></a></td>';
+        $pagar = '<td><a target="_blank" href="http://booking.paracaidismorosario.com/#/' . $groupid . '"><img src="http://booking.paracaidismorosario.com/images/pagar.png" alt="Paracaidismo Rosario" width="183" height="74"></a></td>';
         $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo"></span>';
         $subject = 'Reserva en Paracaidismo Rosario';
     }

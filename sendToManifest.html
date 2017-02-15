@@ -1,17 +1,14 @@
-<div class="modal-header">
-    <h3 class="modal-title">Enviar a manifiesto</h3>
-</div>
-
-<div class="modal-body">
+<div class="modal-body" cg-busy="{promise:promise,message:'Loading'}">
 
     <md-content>
         <md-tabs md-dynamic-height md-border-bottom md-selected="mdselected">
 
         <md-tab label="Detalles">
             <md-content style="padding: 4px;">
+            <form name="sendtomanifestform">
 
-            <div class="form-group" style="display: inline-block;">
-                <label>Nombre *</label>
+                <div class="form-group" style="display: inline-block;">
+                    <label>Nombre *</label>
                     <input ng-model="book.firstname" type="text" class="form-control" placeholder="Nombre" autofocus required>
                 </div>
 
@@ -40,10 +37,8 @@
                 </div>
                 <div class="form-group" style="display: inline-block;">
                     <label>Peso (kg)</label>
-                    <input ng-model="book.weight" type="text" class="form-control" placeholder="Peso">
+                    <input ng-model="book.weight" type="text" class="form-control" placeholder="Peso" required>
                 </div>
-
-                <!--<div style="display: block"></div>-->
 
                 <div class="form-group" style="display: inline-block;">
                     <label>Deposito</label>
@@ -55,16 +50,58 @@
                     <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="book.pending" type="text" class="form-control" placeholder="" disabled>
                 </div>
 
+                <input ng-model="book.jumptypeid" type="text" class="form-control" ng-show="false" required>
+
+
+                <div class="form-group" style="display: inline-block;" ng-show="false">
+                    <label>Tipo de Salto</label>
+                    <select ng-model="jumptype.jumptype" class="form-control" type="text"
+                            ng-options="jumptype.jumptype as jumptype.jumptype for jumptype in jumpstype"
+                            ng-click="jumptypeSelect(book)">
+                    </select>
+                </div>
+
+                <div class="form-group" style="display: inline-block;">
+                    <label>Altura</label>
+                    <select ng-model="jumptype.altitude" class="form-control" type="text"
+                            ng-options="altitude.altitude as altitude.altitude for altitude in altitudes">
+                    </select>
+                </div>
+
+                <div class="form-group" style="display: inline-block;">
+                    <label>Video</label>
+                    <select ng-model="jumptype.video" class="form-control" type="text"
+                            ng-options="videotype.video as videotype.video for videotype in videostype">
+                    </select>
+                </div>
+
+                <label style="display: block; background-color: cornflowerblue ;text-align: center; padding-top: 5px; padding-bottom: 5px;" ng-show="{{action == 'manifest'}}">Instructores</label>
+                <div ng-repeat="req in book.jumpTypeReqList" style="padding-top: 10px;">
+                    <div class="form-group" ng-show="{{action == 'manifest'}}" align="center">
+                        <label style="display: inline-block; width: 100px; text-align: right; padding-right: 10px;">{{req.description}}</label>
+                        <select ng-model="req.skydiverid" class="form-control" style="display: inline-block; width: 200px;"
+                                ng-options="manifestTI.id as manifestTI.name disable when !(manifestTI.disabled) for manifestTI in manifestTIs"
+                                ng-click="test(req)">
+                        </select>
+                    </div>
+                </div>
+
+
                 <div class="modal-footer">
-                    <button class="btn btn-primary" type="button" ng-disabled="bookingForm.$invalid" ng-click="saveBook()">Guardar</button>
+                    <button class="btn btn-primary" type="button" ng-disabled="sendtomanifestform.$invalid || book.weight <= 0" ng-click="saveBook()" ng-show="{{action == 'manifest'}}">Manifestar</button>
+                    <button class="btn btn-primary" type="button" ng-disabled="sendtomanifestform.$invalid || book.weight <= 0" ng-click="saveBook()" ng-show="{{action == 'edit'}}">Guardar</button>
                     <button class="btn btn-warning" type="button" ng-click="cancel();">Cancelar</button>
                 </div>
+
+
+
             </form>
+
             </md-content>
         </md-tab>
 
 
-        <md-tab label="Ingresar Pagos">
+        <md-tab label="Ingresar Pagos" ng-if="!book.bookinsert">
             <md-content style="padding: 4px;">
                 <div style="display: block">
                     <div class="form-group" style="display: inline-block;">
@@ -76,12 +113,19 @@
                         <label>Saldo</label>
                         <input style="background-color: #c12e2a; color: #ffffff; text-align: center" ng-model="book.pending" type="text" class="form-control" placeholder="" disabled>
                     </div>
+
+
+                    <button class="btn btn-warning" style="float: right;" type="button"  ng-click="refreshCash()">Actualizar</button>
+                    <div style="float: right; padding-left: 10px;"></div>
+                    <button class="btn btn-primary" style="float: right;" type="button"  ng-click="OtherPayment()">Otro</button>
                 </div>
 
-                <input style="display: inline-block; text-align:right; width: 100px;" ng-model="cash" type="number" value="" class="form-control" placeholder="0" required>
-                <button style="display: inline-block" class="btn btn-sucess" type="button" ng-click="getCash()">Pagar efectivo</button>
+                <input style="display: inline-block; text-align:right; width: 100px;" ng-model="book.cash" ng-focus="refreshCashInput()" type="number" value="" class="form-control" placeholder="0" required>
+                <button style="display: inline-block" class="btn btn-success" type="button" ng-click="getCash()">Pagar efectivo</button>
 
-                <button class="btn btn-alert" style="float: right;" type="button"  ng-click="payMP()">Pagar con TJ</button>
+                <button class="btn btn-warning" style="float: right;" type="button"  ng-click="payMP()">Pagar con TJ</button>
+                <input style="display: inline-block; text-align:right; width: 100px; float: right;" ng-model="mpcash" type="number" value="" class="form-control" placeholder="0" disabled>
+
 
                 <div class="table-responsive" style="padding-top: 20px;">
                     <div class="panel panel-primary">
@@ -97,7 +141,7 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr ng-repeat="pays in showpayments">
+                                <tr ng-repeat="pays in book.payments | filter: {deleted: 0}">
                                     <td>{{pays.payment_date}}</td>
                                     <td>{{pays.type}}</td>
                                     <td>{{pays.amount}}</td>
@@ -113,6 +157,10 @@
                     </div>
                 </div>
 
+                <div class="modal hide fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-body">
+                    </div>
+                </div>
 
             </md-content>
         </md-tab>

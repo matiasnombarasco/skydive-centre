@@ -6,7 +6,6 @@
  * Time: 8:24 p.m.
  */
 
-session_start();
-$_SESSION['username'] = null;
+setcookie("easymanifest", '', time()-7000000, '/');
 
 ?>

@@ -39,7 +39,6 @@ if ($_GET["topic"] == 'payment') {
 
     $mp_id = $_GET["id"];
 
-
     $rawSQL = "SELECT * FROM payments WHERE mp_id = " . $mp_id . ";";
     $result = $conn->query($rawSQL);
     if (!empty($conn->error)) {
@@ -60,7 +59,6 @@ if ($_GET["topic"] == 'payment') {
     }
 
     $searchResult = $mp->get_payment_info($mp_id);
-
 
     if (isset($searchResult['response']['collection']['status']))
     {
@@ -86,19 +84,25 @@ if ($_GET["topic"] == 'payment') {
             $total_paid_amount = '0';
 
             if (isset($searchResult['response']['collection']['date_approved'])) {
-                $date_approved = $searchResult['response']['collection']['date_approved'];
+                date_default_timezone_set('America/Buenos_Aires');
+                $date_approved = date('Y-m-d H:i:s', strtotime($searchResult['response']['collection']['date_approved']));
             };
-
-            if (isset($searchResult['response']['collection']['transaction_amount'])) {
-                $total_paid_amount = $searchResult['response']['collection']['transaction_amount'];
-            }
 
             if (isset($searchResult['response']['collection']['net_received_amount'])) {
                 $net_received_amount = $searchResult['response']['collection']['net_received_amount'];
             }
 
-            $mercadopago_fee = $total_paid_amount - $net_received_amount;
+            if (isset($searchResult['response']['collection']['transaction_amount'])) {
+                $total_paid_amount = $searchResult['response']['collection']['transaction_amount'];
+                if ($groupid == "XXXXX") {
+                    $total_paid_amount = round($net_received_amount / 1.0341);
+                    if ($net_received_amount > $total_paid_amount) {
+                        $net_received_amount = $total_paid_amount;
+                    }
+                }
+            }
 
+            $mercadopago_fee = $total_paid_amount - $net_received_amount;
 
             $rawSQL = "INSERT INTO payments (type, mp_id, date_approved, mercadopago_fee, net_received_amount, amount, payment_date, id_booking)
                                VALUES ('MP', $mp_id, '" .
@@ -166,6 +170,7 @@ if ($_GET["topic"] == 'payment') {
             $count = 0;
             $vdeposit = 0;
 
+
             while ($r = mysqli_fetch_assoc($result)) {
                 $pasajeros .= '<tr><td style="font-weight:bold">' . $r['firstname'] . ', ' . $r['lastname'] . '</td><td style="padding:1px 4px 7px"><b>|</b></td><td>' . $r['email'] . '</td></tr>';
                 if ($r['vdeposit'] >= $vdeposit) {
@@ -199,7 +204,7 @@ exit;
 
 function sendMail($email, $count, $pasajeros, $groupid, $bookdate,  $deposit)
 {
-    $price = $count * 1850;
+    $price = $count * 1900;
 
     $horario = '<span style="font-family:Arial,Helvetica,sans-serif,Tahoma;color:#006;font-size:18px;line-height:130%;font-weight:bold;padding:0 5px;" id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Hemos recibido su pago.<br> Ya puede elegir su horario clickeando MODIFICAR RESERVA debajo</span>';
     $gracias = '<span id="ctl00_ContentTitle_labelHeadingInfo" class="pageHeadingInfo">Gracias por elegirnos. <br> Si desea modificar su reserva utilize el link debajo.</span>';
@@ -585,7 +590,7 @@ function smtpsend($email,$textmail, $subject) {
     if (!$mail->Send()) {
         echo "Mailer Error: " . $mail->ErrorInfo;
     } else {
-        //echo "Message sent!";
+        //echo "Message sent to $email";
     }
 }
 

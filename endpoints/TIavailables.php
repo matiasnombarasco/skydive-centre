@@ -2,15 +2,18 @@
 /**
  * Created by PhpStorm.
  * User: saresca
- * Date: 3/23/16
- * Time: 8:09 p.m.
+ * Date: 11/29/16
+ * Time: 12:09 p.m.
  */
+
+/// ESTO NO SE USA MAS. REEMPLAZADO POR staffstatus.php
+
 
 if (isset($_COOKIE["easymanifest"])) {
 
     include 'config.php';
 
-//$requestParts = explode(':', $_GET['id']);
+    //$requestParts = explode(':', $_GET['id']);
 
     $conn = new mysqli($servername, $username, $password, $db);
 
@@ -18,27 +21,27 @@ if (isset($_COOKIE["easymanifest"])) {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $postdata = file_get_contents("php://input");
-    $request = json_decode($postdata, false);
-
-    $rawSQL = "SELECT id, firstname FROM tandem_bookings WHERE isTandemInstructor = 'Y' AND loggedin = 1";
+    $rawSQL = "SELECT id, firstname, loggedin, weight FROM tandem_bookings WHERE isTandemInstructor = 'Y';";
 
     $result = $conn->query($rawSQL);
     if (!empty($conn->error)) {
         die($conn->error);
     }
 
-    //$rows[] = array();
     if (!empty($result->num_rows) && $result->num_rows > 0) {
         while ($r = mysqli_fetch_assoc($result)) {
             $rows[] = array(
                 'id' => $r['id'],
-                'firstname' => $r['firstname']
+                'name' => $r['firstname'],
+                'loggedin' => $r['loggedin'],
+                'weight' => isset($r['weight']) ? $r['weight'] : ''
             );
         }
     }
-    print json_encode($rows);
+    else
+    {
+        $rows[] = array();
+    }
+    print json_encode($rows, JSON_NUMERIC_CHECK);
 }
-
 ?>
-

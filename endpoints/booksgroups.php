@@ -36,14 +36,6 @@
 
             $fieldupdate = '';
 
-            if (isset($request->schtime)) {
-                $fieldupdate .= "schtime='" . $request->schtime . "',";
-            }
-
-            if (isset($request->deposit)) {
-                $fieldupdate .= "deposit = '" . $request->deposit . "',";
-            }
-
             if (isset($request->notes)) {
                 $fieldupdate .= "notes='" . $request->notes . "',";
             }
@@ -60,34 +52,53 @@
             $fieldupdate = rtrim($fieldupdate, ',');
 
             $rawSql = "UPDATE group_bookings SET " . $fieldupdate . " WHERE groupid='" . $groupid . "';";
+
+            $result = $conn->query($rawSql);
+            if (!empty($conn->error)) {
+                die($conn->error);
+            }
+
+            $pusher_date = isset($request->bookdate) ? $request->bookdate : '';
+            include('pusher.php');
+
             break;
         default:
             if (isset($_GET["groupid"])) {
                 $rawSql = "SELECT * FROM group_bookings WHERE groupid = '" . $groupid . "'";
             }
+
+            $result = $conn->query($rawSql);
+            if (!empty($conn->error))
+            {
+                die($conn->error);
+            };
+
+            if (!empty($result->num_rows) && $result->num_rows > 0)
+            {
+                // output the result object as an array and the make it json! and echo it, so u can see it in the screen.
+                while ($r = mysqli_fetch_assoc($result))
+                {
+                    $bookdate = isset($r['date']) ? $r['date'] : '';
+                    $bookdate = ($bookdate == '0000-00-00') ? '' : $bookdate;
+
+                    $rows[] = array(
+                        'groupid' => $r['groupid'],
+                        'bookdate' => $bookdate,
+                        'schtime' => isset($r['schtime']) ? $r['schtime'] : '',
+                        'selectedTime' => isset($r['booking_datetime_id']) ? $r['booking_datetime_id'] : '0',
+                        'notes' => isset($r['notes']) ? $r['notes'] : '',
+                        'booking_datetime' => isset($r['booking_datetime']) ? $r['booking_datetime'] : '',
+                        'mpurl' => isset($r['mpurl']) ? $r['mpurl'] : ''
+                    );
+
+                };
+                print json_encode($rows, JSON_NUMERIC_CHECK);
+            };
             break;
     }
 
-    $result = $conn->query($rawSql);
-    if (!empty($conn->error)) {
-        die($conn->error);
-    }
 
-    if (!empty($result->num_rows) && $result->num_rows > 0) {
-        // output the result object as an array and the make it json! and echo it, so u can see it in the screen.
-        while ($r = mysqli_fetch_assoc($result)) {
-            $rows[] = array(
-                'groupid' => $r['groupid'],
-                'bookdate' => $r['date'],
-                'schtime' => isset($r['schtime']) ? $r['schtime'] : '',
-                'deposit' => isset($r['deposit']) ? $r['deposit'] : '0',
-                'selectedTime' => isset($r['booking_datetime_id']) ? $r['booking_datetime_id'] : '0',
-                'notes' => isset($r['notes']) ? $r['notes'] : ''
-            );
 
-        }
-        print json_encode($rows);
-    }
 
 //}
 

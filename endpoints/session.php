@@ -6,11 +6,9 @@
  * Time: 3:04 p.m.
  */
 
-session_start();
-
 $row = array('session' => 'false');
 
-if (isset($_SESSION['username'])) {
+if (isset($_COOKIE["easymanifest"])) {
     $row = array(
         'session' => 'true'
     );

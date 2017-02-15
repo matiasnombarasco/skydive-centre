@@ -6,7 +6,10 @@
  * Time: 6:15 p.m.
  */
 
-session_start();
+
+setcookie("easymanifest","paracaidismo",time()+(60*60*24*365),'/');
+
+
 include 'config.php';
 
 $conn = new mysqli($servername, $username, $password, $db);
@@ -31,13 +34,21 @@ if (!empty($conn->error)) {
 $r = mysqli_fetch_assoc($result);
 
 if (!empty($result->num_rows) && $result->num_rows > 0) {
+
+    /*
+    $rawSql = "INSERT INTO pusher VALUES('$username','','') ON DUPLICATE KEY UPDATE querydate = '';";
+
+    $result = $conn->query($rawSql);
+    if (!empty($conn->error)) {
+        die($conn->error);
+    }
+    */
+
     $data[] = array(
         'username' => $r['username'],
         'role' => $r['role']
     );
 
-    $_SESSION['username'] = $r['username'];
-    $_SESSION['role'] = $r['role'];
 
     print json_encode($data);
 }

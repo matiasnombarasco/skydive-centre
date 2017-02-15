@@ -6,9 +6,7 @@
  * Time: 3:34 p.m.
  */
 
-session_start();
-
-if (isset($_SESSION['username'])) {
+if (isset($_COOKIE["easymanifest"])) {
 
     require('class.phpmailer.php');
     include('class.smtp.php');

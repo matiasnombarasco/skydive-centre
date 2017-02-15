@@ -1,0 +1,32 @@
+<div class="modal-header" style="text-align: center;">
+    <h3 class="modal-title" ng-show="!horario">Confirmar reserva</h3>
+    <h4 class="modal-title" ng-show="horario">Luego de realizar el pago haz click en seleccionar horario</h4>
+    <div style="display: block; padding-bottom: 30px; padding-top: 5px;"><input ng-show="horario" type="button" ng-click="goBack()" class="btn btn-danger" value="Seleccionar Horario"></div>
+</div>
+
+<div class="modal-body">
+    <form name="MPForm" style="text-align: center;">
+        <div class="form-group">
+            <label>Para completar la reserva debe realizar un pago de ${{MP_PayAmmount}}</label>
+            <label>Luego de abonar el mismo podra elegir el horario.</label>
+            <label>Si realiza el pago con tarjeta de credito lo podra realizar inmediatamente.</label>
+        </div>
+
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <strong>IMPORTANTE PARA TERMINAR LA TRANSACCION,</strong> en caso de no pagar con tarjeta de credito, se le enviara un email para elegir el horario una vez que el pago haya sido efectuado
+        </div>
+
+        <div style="display: inline-block; padding-bottom: 30px;"><input type="button" name="MP-Checkout" ng-click="acceptMP()" class="btn btn-primary" value="Pagar Reserva AHORA"></div>
+        <div style="display: inline-block; padding-bottom: 30px;"><input type="button" name="MP-Checkout" ng-click="payAfter()" class="btn btn-warning" value="Pagar Reserva luego"></div>
+
+        <img src="images/mediospagos.jpg">
+
+    </form>
+
+    <div class="modal hide fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-body">
+        </div>
+    </div>
+
+</div>
